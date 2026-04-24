@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cat — ISF Shader Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #050509; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: monospace; color: #ccc; }
+    canvas { display: block; width: min(90vw, 90vh); height: min(90vw, 90vh); border-radius: 12px; box-shadow: 0 0 60px rgba(100,200,255,0.12); }
+    .controls { margin-top: 18px; display: flex; gap: 18px; align-items: center; flex-wrap: wrap; justify-content: center; }
+    label { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+    input[type=range] { width: 100px; accent-color: #6af; cursor: pointer; }
+    input[type=color] { width: 36px; height: 24px; border: none; background: none; cursor: pointer; border-radius: 4px; }
+    input[type=checkbox] { cursor: pointer; accent-color: #6af; }
+    h1 { font-size: 14px; letter-spacing: 3px; text-transform: uppercase; color: #6af; margin-bottom: 16px; opacity: 0.7; }
+  </style>
+</head>
+<body>
+  <h1>cat.fs &mdash; ISF Shader</h1>
+  <canvas id="c"></canvas>
+  <div class="controls">
+    <label>Fur <input type="color" id="fur" value="#c79460" /></label>
+    <label>Eyes <input type="color" id="eyes" value="#2eb848" /></label>
+    <label>BG <input type="color" id="bg" value="#0d0d1f" /></label>
+    <label>Pupils <input type="range" id="pupils" min="0" max="1" step="0.01" value="0.4" /></label>
+    <label>Animate <input type="checkbox" id="animate" checked /></label>
+  </div>
+
+  <script>
+  const canvas = document.getElementById('c');
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) { canvas.replaceWith(Object.assign(document.createElement('p'), { textContent: 'WebGL not supported.' })); }
+
+  const VERT_SRC = `
+    attribute vec2 a_pos;
+    void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+  `;
+
+  // Fragment shader — GLSL ES 1.0, ISF variables mapped to uniforms
+  const FRAG_SRC = `
+    precision highp float;
+    uniform vec2  RENDERSIZE;
+    uniform float TIME;
+    uniform vec4  fur_color;
+    uniform vec4  eye_color;
+    uniform vec4  bg_color;
+    uniform float pupil_dilation;
+    uniform bool  animate;
+
+    // --- SDF primitives ---
+    float sdCircle(vec2 p, float r) { return length(p) - r; }
+
+    float sdBox(vec2 p, vec2 b) {
+      vec2 d = abs(p) - b;
+      return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+    }
+
+    float sdTriangle(vec2 p, vec2 a, vec2 b, vec2 c) {
+      vec2 e0 = b-a, e1 = c-b, e2 = a-c;
+      vec2 v0 = p-a, v1 = p-b, v2 = p-c;
+      vec2 pq0 = v0 - e0*clamp(dot(v0,e0)/dot(e0,e0),0.0,1.0);
+      vec2 pq1 = v1 - e1*clamp(dot(v1,e1)/dot(e1,e1),0.0,1.0);
+      vec2 pq2 = v2 - e2*clamp(dot(v2,e2)/dot(e2,e2),0.0,1.0);
+      float s = sign(e0.x*e2.y - e0.y*e2.x);
+      vec2 d = min(min(
+        vec2(dot(pq0,pq0), s*(v0.x*e0.y-v0.y*e0.x)),
+        vec2(dot(pq1,pq1), s*(v1.x*e1.y-v1.y*e1.x))),
+        vec2(dot(pq2,pq2), s*(v2.x*e2.y-v2.y*e2.x)));
+      return -sqrt(d.x)*sign(d.y);
+    }
+
+    float sdSegment(vec2 p, vec2 a, vec2 b) {
+      vec2 pa = p-a, ba = b-a;
+      return length(pa - ba*clamp(dot(pa,ba)/dot(ba,ba),0.0,1.0));
+    }
+
+    float fill(float d, float aa) { return smoothstep(aa,-aa,d); }
+
+    void main() {
+      vec2 uv = (gl_FragCoord.xy / RENDERSIZE) * 2.0 - 1.0;
+      uv.x *= RENDERSIZE.x / RENDERSIZE.y;
+
+      float aa = 1.5 / min(RENDERSIZE.x, RENDERSIZE.y);
+
+      float t = animate ? TIME : 0.0;
+
+      // Blink
+      float blinkPhase = mod(t, 5.0);
+      float blink = 1.0 - smoothstep(0.0,0.06,blinkPhase)*(1.0-smoothstep(0.06,0.22,blinkPhase));
+
+      // Head bob
+      float bob = animate ? sin(t*1.1)*0.008 : 0.0;
+      uv.y -= bob;
+
+      // --- Head ---
+      vec2 headP = uv; headP.y *= 1.08;
+      float head = sdCircle(headP, 0.38);
+
+      // --- Ears ---
+      float earL = sdTriangle(uv, vec2(-0.37,0.14), vec2(-0.22,0.48), vec2(-0.08,0.19));
+      float earR = sdTriangle(uv, vec2( 0.08,0.19), vec2( 0.22,0.48), vec2( 0.37,0.14));
+      float ears = min(earL, earR);
+
+      float innerEarL = sdTriangle(uv, vec2(-0.33,0.16), vec2(-0.22,0.40), vec2(-0.11,0.20));
+      float innerEarR = sdTriangle(uv, vec2( 0.11,0.20), vec2( 0.22,0.40), vec2( 0.33,0.16));
+
+      // --- Eyes ---
+      vec2 eyeLPos = vec2(-0.135, 0.04);
+      vec2 eyeRPos = vec2( 0.135, 0.04);
+      float eyeRadius = 0.078;
+      float eyeL = sdCircle(uv - eyeLPos, eyeRadius);
+      float eyeR2 = sdCircle(uv - eyeRPos, eyeRadius);
+
+      float breathe = animate ? 0.5+0.5*sin(t*0.5) : 0.5;
+      float slitW = clamp(mix(0.007, eyeRadius*0.82, pupil_dilation+breathe*0.15), 0.007, eyeRadius*0.88);
+      float pupilL = sdBox(uv - eyeLPos, vec2(slitW, eyeRadius*0.86));
+      float pupilR = sdBox(uv - eyeRPos, vec2(slitW, eyeRadius*0.86));
+
+      float lidH = eyeRadius*(1.0-blink)+0.002;
+      float lidL = sdBox(uv - eyeLPos - vec2(0.0, eyeRadius*blink*0.5), vec2(eyeRadius*1.15, lidH));
+      float lidR = sdBox(uv - eyeRPos - vec2(0.0, eyeRadius*blink*0.5), vec2(eyeRadius*1.15, lidH));
+
+      vec2 shineOff = vec2(0.022, 0.026);
+      float shineL = sdCircle(uv - eyeLPos - shineOff, 0.017);
+      float shineR = sdCircle(uv - eyeRPos - shineOff, 0.017);
+
+      // --- Nose ---
+      float nose = sdTriangle(uv, vec2(-0.034,-0.072), vec2(0.0,-0.100), vec2(0.034,-0.072));
+
+      // --- Mouth ---
+      float philtrum  = sdSegment(uv, vec2(0.0,-0.100), vec2(0.0,-0.130));
+      float mouthL    = sdSegment(uv, vec2(0.0,-0.130), vec2(-0.068,-0.158));
+      float mouthLtip = sdSegment(uv, vec2(-0.068,-0.158), vec2(-0.105,-0.145));
+      float mouthR    = sdSegment(uv, vec2(0.0,-0.130), vec2( 0.068,-0.158));
+      float mouthRtip = sdSegment(uv, vec2( 0.068,-0.158), vec2( 0.105,-0.145));
+      float mouth = min(min(philtrum,mouthL),min(mouthLtip,min(mouthR,mouthRtip)));
+
+      // --- Whiskers ---
+      float wL1 = sdSegment(uv, vec2(-0.045,-0.087), vec2(-0.38,-0.062));
+      float wL2 = sdSegment(uv, vec2(-0.045,-0.096), vec2(-0.38,-0.096));
+      float wL3 = sdSegment(uv, vec2(-0.045,-0.106), vec2(-0.38,-0.132));
+      float wR1 = sdSegment(uv, vec2( 0.045,-0.087), vec2( 0.38,-0.062));
+      float wR2 = sdSegment(uv, vec2( 0.045,-0.096), vec2( 0.38,-0.096));
+      float wR3 = sdSegment(uv, vec2( 0.045,-0.106), vec2( 0.38,-0.132));
+      float whiskers = min(min(wL1,wL2),min(wL3,min(min(wR1,wR2),wR3)));
+
+      // --- Forehead stripes ---
+      float strM = sdSegment(uv, vec2(0.0,0.22),  vec2(0.0,0.36));
+      float strL = sdSegment(uv, vec2(-0.095,0.20),vec2(-0.065,0.34));
+      float strR = sdSegment(uv, vec2( 0.095,0.20),vec2( 0.065,0.34));
+      float stripes = min(strM, min(strL, strR));
+
+      // --- Composite ---
+      vec3 col = bg_color.rgb;
+
+      // Fur
+      col = mix(col, fur_color.rgb, fill(min(head, ears), aa));
+      // Inner ear
+      vec3 pink = vec3(0.96, 0.60, 0.68);
+      col = mix(col, pink, fill(innerEarL, aa));
+      col = mix(col, pink, fill(innerEarR, aa));
+      // Stripes
+      col = mix(col, fur_color.rgb*0.55, step(stripes,0.006)*fill(head,aa));
+      // Iris
+      col = mix(col, eye_color.rgb, fill(eyeL, aa));
+      col = mix(col, eye_color.rgb, fill(eyeR2, aa));
+      // Pupils
+      col = mix(col, vec3(0.03,0.02,0.04), fill(pupilL,aa)*fill(eyeL,aa)*blink);
+      col = mix(col, vec3(0.03,0.02,0.04), fill(pupilR,aa)*fill(eyeR2,aa)*blink);
+      // Shine
+      col = mix(col, vec3(1.0), fill(shineL,aa)*fill(eyeL,aa)*blink);
+      col = mix(col, vec3(1.0), fill(shineR,aa)*fill(eyeR2,aa)*blink);
+      // Eyelid
+      col = mix(col, fur_color.rgb, fill(lidL,aa)*fill(eyeL,aa));
+      col = mix(col, fur_color.rgb, fill(lidR,aa)*fill(eyeR2,aa));
+      // Nose
+      col = mix(col, vec3(0.90,0.38,0.50), fill(nose,aa));
+      // Mouth
+      col = mix(col, vec3(0.28,0.10,0.14), step(mouth,0.0055)*fill(head,aa));
+      // Whiskers
+      col = mix(col, vec3(0.95,0.95,0.98), step(whiskers,0.0028));
+
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `;
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+      console.error(gl.getShaderInfoLog(s));
+    return s;
+  }
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT_SRC));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG_SRC));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  // Full-screen quad
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, 'a_pos');
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+  // Uniforms
+  const u = {
+    RENDERSIZE:     gl.getUniformLocation(prog, 'RENDERSIZE'),
+    TIME:           gl.getUniformLocation(prog, 'TIME'),
+    fur_color:      gl.getUniformLocation(prog, 'fur_color'),
+    eye_color:      gl.getUniformLocation(prog, 'eye_color'),
+    bg_color:       gl.getUniformLocation(prog, 'bg_color'),
+    pupil_dilation: gl.getUniformLocation(prog, 'pupil_dilation'),
+    animate:        gl.getUniformLocation(prog, 'animate'),
+  };
+
+  function hexToVec4(hex) {
+    const r = parseInt(hex.slice(1,3),16)/255;
+    const g = parseInt(hex.slice(3,5),16)/255;
+    const b = parseInt(hex.slice(5,7),16)/255;
+    return [r, g, b, 1.0];
+  }
+
+  function resize() {
+    const s = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.9);
+    canvas.width  = Math.round(s * devicePixelRatio);
+    canvas.height = Math.round(s * devicePixelRatio);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+
+  let startTime = performance.now();
+
+  function render() {
+    const t = (performance.now() - startTime) / 1000;
+    gl.uniform2f(u.RENDERSIZE, canvas.width, canvas.height);
+    gl.uniform1f(u.TIME, t);
+    gl.uniform4fv(u.fur_color,      hexToVec4(document.getElementById('fur').value));
+    gl.uniform4fv(u.eye_color,      hexToVec4(document.getElementById('eyes').value));
+    gl.uniform4fv(u.bg_color,       hexToVec4(document.getElementById('bg').value));
+    gl.uniform1f(u.pupil_dilation,  parseFloat(document.getElementById('pupils').value));
+    gl.uniform1i(u.animate,         document.getElementById('animate').checked ? 1 : 0);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render();
+  </script>
+</body>
+</html>
