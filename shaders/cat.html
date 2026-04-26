@@ -90,7 +90,7 @@
       <span class="group-label">Body</span>
       <label>Show body <input type="checkbox" id="show_body"></label>
       <label>Neck gap
-        <input type="range" id="neck_gap" min="0" max="0.28" step="0.005" value="0.04">
+        <input type="range" id="neck_gap" min="-0.20" max="0.28" step="0.005" value="0.04">
         <span class="val" id="v_neck">0.04</span>
       </label>
       <label>Scale
@@ -287,7 +287,7 @@
       // BODY PARTS
       float bY = -0.632 - neck_gap;
 
-      float neckHalf = neck_gap*0.5;
+      float neckHalf = max(0.0, neck_gap*0.5);
       float neck_sdf = sdBox(uv-vec2(0.0,(-0.352+bY+0.28)*0.5), vec2(0.108,neckHalf));
 
       vec2 bodyP=uv-vec2(0.0,bY); bodyP.x/=0.88;

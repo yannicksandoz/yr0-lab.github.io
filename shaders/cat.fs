@@ -15,7 +15,7 @@
     { "NAME": "whisker_amp",  "TYPE": "float", "DEFAULT": 0.5,  "MIN": 0.0, "MAX": 1.0 },
     { "NAME": "tail_amp",     "TYPE": "float", "DEFAULT": 0.5,  "MIN": 0.0, "MAX": 1.0 },
     { "NAME": "show_body",    "TYPE": "bool",  "DEFAULT": false },
-    { "NAME": "neck_gap",     "TYPE": "float", "DEFAULT": 0.04, "MIN": 0.0, "MAX": 0.28 },
+    { "NAME": "neck_gap",     "TYPE": "float", "DEFAULT": 0.04, "MIN": -0.20, "MAX": 0.28 },
     { "NAME": "body_scale",   "TYPE": "float", "DEFAULT": 0.65, "MIN": 0.45,"MAX": 0.90 }
   ]
 }*/
@@ -182,8 +182,8 @@ void main() {
     // neck_gap=0 → body top exactly meets head bottom, no gap, no neck box
     float bY = -0.632 - neck_gap;
 
-    // Neck — zero-sized (invisible) when neck_gap=0, grows proportionally with the gap
-    float neckHalf = neck_gap * 0.5;
+    // Neck — invisible at gap<=0 (head overlaps body), grows proportionally above 0
+    float neckHalf = max(0.0, neck_gap * 0.5);
     float neckCY   = (-0.352 + bY + 0.28) * 0.5;
     float neck_sdf = sdBox(uv - vec2(0.0, neckCY), vec2(0.108, neckHalf));
 
