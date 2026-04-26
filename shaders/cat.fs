@@ -178,11 +178,12 @@ void main() {
     float stripes = min(strM, min(strL, strR));
 
     // ---------------------------------------------------------------- BODY
-    // bY: body center Y.  neck_gap=0 → body top (~-0.35) flush with head bottom (~-0.352)
-    float bY = -0.63 - neck_gap;
+    // bY: body center Y.  -0.352 = 0.38/1.08 (head ellipse y-radius = head bottom)
+    // neck_gap=0 → body top exactly meets head bottom, no gap, no neck box
+    float bY = -0.632 - neck_gap;
 
-    // Neck — box bridging the gap; gives a natural throat when gap is small
-    float neckHalf = (neck_gap * 0.5) + 0.008;
+    // Neck — zero-sized (invisible) when neck_gap=0, grows proportionally with the gap
+    float neckHalf = neck_gap * 0.5;
     float neckCY   = (-0.352 + bY + 0.28) * 0.5;
     float neck_sdf = sdBox(uv - vec2(0.0, neckCY), vec2(0.108, neckHalf));
 
