@@ -7,6 +7,8 @@
     { "NAME": "fur_color",     "TYPE": "color", "DEFAULT": [0.78, 0.58, 0.38, 1.0] },
     { "NAME": "eye_color",     "TYPE": "color", "DEFAULT": [0.18, 0.72, 0.28, 1.0] },
     { "NAME": "bg_color",      "TYPE": "color", "DEFAULT": [0.05, 0.05, 0.12, 1.0] },
+    { "NAME": "outline_color", "TYPE": "color", "DEFAULT": [0.30, 0.20, 0.10, 1.0] },
+    { "NAME": "outline_width", "TYPE": "float", "DEFAULT": 0.013, "MIN": 0.0,   "MAX": 0.04  },
     { "NAME": "pupil_dilation","TYPE": "float", "DEFAULT": 0.4,   "MIN": 0.0,   "MAX": 1.0  },
     { "NAME": "mouth_open",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
     { "NAME": "animate",       "TYPE": "bool",  "DEFAULT": true   },
@@ -20,6 +22,7 @@
     { "NAME": "whisker_t",     "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 1.0  },
     { "NAME": "tail_amp",      "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 3.0  },
     { "NAME": "tail_t",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "tail_middle_x", "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.50, "MAX": 0.50 },
     { "NAME": "show_body",     "TYPE": "bool",  "DEFAULT": false  },
     { "NAME": "neck_gap",      "TYPE": "float", "DEFAULT": -0.10, "MIN": -0.20, "MAX": 0.28 },
     { "NAME": "body_scale",    "TYPE": "float", "DEFAULT": 0.65,  "MIN": 0.45,  "MAX": 0.90 },
@@ -33,6 +36,7 @@
     { "NAME": "paw_f_size",    "TYPE": "float", "DEFAULT": 0.098, "MIN": 0.04,  "MAX": 0.18 },
     { "NAME": "paw_b_radius",  "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 0.35 },
     { "NAME": "paw_b_t",       "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "paw_b_spread",  "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.15, "MAX": 0.30 },
     { "NAME": "paw_b_x",       "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
     { "NAME": "paw_b_y",       "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
     { "NAME": "paw_b_size",    "TYPE": "float", "DEFAULT": 0.092, "MIN": 0.04,  "MAX": 0.18 },
@@ -137,11 +141,11 @@ void main() {
     float earAngle  = earManual + earAuto;
     vec2 uvEL = earPivL + rot2(-earAngle) * (uv - earPivL);
     vec2 uvER = earPivR + rot2( earAngle) * (uv - earPivR);
-    float earL = sdTriangle(uvEL, vec2(-0.33,0.17), vec2(-0.205,0.46), vec2(-0.10,0.21));
-    float earR = sdTriangle(uvER, vec2( 0.10,0.21), vec2( 0.205,0.46), vec2( 0.33,0.17));
+    float earL = sdTriangle(uvEL, vec2(-0.36,0.06), vec2(-0.205,0.46), vec2(-0.09,0.10));
+    float earR = sdTriangle(uvER, vec2( 0.09,0.10), vec2( 0.205,0.46), vec2( 0.36,0.06));
     float ears = min(earL, earR);
-    float innerEarL = sdTriangle(uvEL, vec2(-0.29,0.19), vec2(-0.205,0.39), vec2(-0.13,0.22));
-    float innerEarR = sdTriangle(uvER, vec2( 0.13,0.22), vec2( 0.205,0.39), vec2( 0.29,0.19));
+    float innerEarL = sdTriangle(uvEL, vec2(-0.31,0.11), vec2(-0.205,0.39), vec2(-0.12,0.14));
+    float innerEarR = sdTriangle(uvER, vec2( 0.12,0.14), vec2( 0.205,0.39), vec2( 0.31,0.11));
 
     // ======================================================== EYES
     vec2 eyeLPos = vec2(-0.135, 0.04);
@@ -218,13 +222,14 @@ void main() {
     float tailAngle = tail_t * 6.2832 + (animate ? t * 0.65 : 0.0);
     float tSwayH = tail_amp * 0.55 * cos(tailAngle);
     float tSwayV = tail_amp * 0.22 * sin(tailAngle);
-    vec2  tailPiv = vec2(0.24, bY + tSwayV);
+    float tRX    = tail_middle_x;
+    vec2  tailPiv = vec2(0.24 + tRX, bY + tSwayV);
     vec2  uvT     = tailPiv + rot2(-tSwayH) * (uv - tailPiv);
-    vec2 tA = vec2(0.24, bY);
-    vec2 tB = vec2(0.58, bY - 0.04);
-    vec2 tC = vec2(0.54, bY - 0.22);
+    vec2 tA = vec2(0.24 + tRX, bY);
+    vec2 tB = vec2(0.58 + tRX, bY - 0.04);
+    vec2 tC = vec2(0.54 + tRX, bY - 0.22);
     vec2 tD = 2.0*tC - tB;
-    vec2 tE = vec2(0.20 + tail_tip_x, bY - 0.30 + tail_tip_y);
+    vec2 tE = vec2(0.20 + tRX + tail_tip_x, bY - 0.30 + tail_tip_y);
     float tailW    = tail_tip_size;
     float tail_sdf = min(sdBezier(uvT,tA,tB,tC)-tailW, sdBezier(uvT,tC,tD,tE)-tailW);
     float tailTip  = sdCircle(uvT - tE, tailW);
@@ -252,8 +257,8 @@ void main() {
     // ---- BACK PAWS (paw_b): tucked bottom paws ----
     float pbAngle    = paw_b_t * 6.2832 + (animate ? t * 2.5 : 0.0);
     vec2  pbDelta    = paw_b_radius * vec2(cos(pbAngle), sin(pbAngle) * 0.55);
-    vec2  pbLCenter  = vec2(-0.13 + paw_b_x, bY - 0.31 + paw_b_y) + vec2(-pbDelta.x, pbDelta.y);
-    vec2  pbRCenter  = vec2( 0.13 + paw_b_x, bY - 0.31 + paw_b_y) + pbDelta;
+    vec2  pbLCenter  = vec2(-0.13 - paw_b_spread + paw_b_x, bY - 0.31 + paw_b_y) + vec2(-pbDelta.x, pbDelta.y);
+    vec2  pbRCenter  = vec2( 0.13 + paw_b_spread + paw_b_x, bY - 0.31 + paw_b_y) + pbDelta;
     vec2 pbLP = uv - pbLCenter; pbLP.y *= 0.65;
     float pbL = sdCircle(pbLP, paw_b_size);
     vec2 pbRP = uv - pbRCenter; pbRP.y *= 0.65;
@@ -295,31 +300,32 @@ void main() {
     vec3 col = bg_color.rgb;
     vec3 fur = fur_color.rgb;
 
-    float outW = 0.013;
-    vec3 furDark = fur * 0.58;
+    float outW = outline_width;
+    vec3 outlineCol = outline_color.rgb;
 
     if (show_body) {
         // Tail with outline
-        col = mix(col, furDark, fill(tail_sdf + outW, aa));
+        col = mix(col, outlineCol, fill(tail_sdf + outW, aa));
         col = mix(col, fur, fill(tail_sdf, aa));
-        col = mix(col, furDark, fill(tailTip + outW, aa));
+        col = mix(col, outlineCol, fill(tailTip + outW, aa));
         col = mix(col, fur, fill(tailTip, aa));
         // Back paws behind body, with outline + toes
-        col = mix(col, furDark, fill(pbL + outW, aa));
+        col = mix(col, outlineCol, fill(pbL + outW, aa));
         col = mix(col, fur, fill(pbL, aa));
         col = mix(col, fur*0.55, fill(toeBL-0.004,aa)*fill(pbL,aa));
-        col = mix(col, furDark, fill(pbR + outW, aa));
+        col = mix(col, outlineCol, fill(pbR + outW, aa));
         col = mix(col, fur, fill(pbR, aa));
         col = mix(col, fur*0.55, fill(toeBR-0.004,aa)*fill(pbR,aa));
         // Neck + body with outline
-        col = mix(col, furDark, fill(neck_sdf + outW, aa));
+        col = mix(col, outlineCol, fill(neck_sdf + outW, aa));
         col = mix(col, fur, fill(neck_sdf, aa));
-        col = mix(col, furDark, fill(body_sdf + outW, aa));
+        col = mix(col, outlineCol, fill(body_sdf + outW, aa));
         col = mix(col, fur, fill(body_sdf, aa));
         col = mix(col, mix(fur,vec3(1.0),0.45), fill(belly,aa)*fill(body_sdf,aa));
     }
 
     // Head + ears + face (below ball and front paws)
+    col = mix(col, outlineCol, fill(min(head,ears) + outW, aa));
     col = mix(col, fur, fill(min(head,ears), aa));
     col = mix(col, vec3(0.96,0.60,0.68), fill(innerEarL, aa));
     col = mix(col, vec3(0.96,0.60,0.68), fill(innerEarR, aa));
@@ -347,10 +353,10 @@ void main() {
 
     // Front paws on top of ball
     if (show_body) {
-        col = mix(col, furDark, fill(pfL + outW, aa));
+        col = mix(col, outlineCol, fill(pfL + outW, aa));
         col = mix(col, fur, fill(pfL, aa));
         col = mix(col, fur*0.55, fill(toeL-0.004,aa)*fill(pfL,aa));
-        col = mix(col, furDark, fill(pfR + outW, aa));
+        col = mix(col, outlineCol, fill(pfR + outW, aa));
         col = mix(col, fur, fill(pfR, aa));
         col = mix(col, fur*0.55, fill(toeR-0.004,aa)*fill(pfR,aa));
     }
