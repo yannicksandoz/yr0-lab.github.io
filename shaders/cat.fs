@@ -44,15 +44,17 @@
     { "NAME": "show_ball",     "TYPE": "bool",  "DEFAULT": false  },
     { "NAME": "ball_color",    "TYPE": "color", "DEFAULT": [0.85, 0.15, 0.25, 1.0] },
     { "NAME": "ball_t",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
-    { "NAME": "ball_x",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.60, "MAX": 0.60 },
+    { "NAME": "ball_x",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
     { "NAME": "ball_y",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.60, "MAX": 0.60 },
     { "NAME": "ball_size",     "TYPE": "float", "DEFAULT": 0.062, "MIN": 0.02,  "MAX": 0.18 },
     { "NAME": "ball_arc",      "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
     { "NAME": "ball_roll",     "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
     { "NAME": "ball_travel",   "TYPE": "float", "DEFAULT": 0.18,  "MIN": 0.0,   "MAX": 0.60 },
+    { "NAME": "ball_roll_offset", "TYPE": "float", "DEFAULT": 0.0, "MIN": -1.0, "MAX": 1.0  },
     { "NAME": "tail_tip_x",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
     { "NAME": "tail_tip_y",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
-    { "NAME": "tail_tip_size", "TYPE": "float", "DEFAULT": 0.028, "MIN": 0.01,  "MAX": 0.08 }
+    { "NAME": "tail_tip_size", "TYPE": "float", "DEFAULT": 0.028, "MIN": 0.01,  "MAX": 0.08 },
+    { "NAME": "mirror",        "TYPE": "bool",  "DEFAULT": false  }
   ]
 }*/
 
@@ -131,6 +133,7 @@ void main() {
     float bobManual = (bob_t - 0.5) * 2.0 * 0.030;
     float bobAuto   = animate ? sin(t*1.1)*(bob_amp*0.030) : 0.0;
     uv.y -= bobManual + bobAuto;
+    if (mirror) uv.x = -uv.x;
 
     // ======================================================== HEAD
     vec2 headP = uv; headP.y *= 1.08;
@@ -175,8 +178,8 @@ void main() {
     float jawD = mouth_open * 0.065;
     vec2 mCL = mix(vec2(-0.068,-0.158), vec2(-0.096,-0.182-jawD), mouth_open);
     vec2 mCR = mix(vec2( 0.068,-0.158), vec2( 0.096,-0.182-jawD), mouth_open);
-    vec2 mTL = mix(vec2(-0.105,-0.145), vec2(-0.114,-0.172-jawD), mouth_open);
-    vec2 mTR = mix(vec2( 0.105,-0.145), vec2( 0.114,-0.172-jawD), mouth_open);
+    vec2 mTL = vec2(mix(-0.105, -0.116, mouth_open), -0.145);
+    vec2 mTR = vec2(mix( 0.105,  0.116, mouth_open), -0.145);
     float philtrum  = sdSegment(uv, vec2(0.0,-0.100), vec2(0.0,-0.130));
     float mouthL2   = sdSegment(uv, vec2(0.0,-0.130), mCL);
     float mouthLtip = sdSegment(uv, mCL, mTL);
@@ -293,7 +296,7 @@ void main() {
     float ballSdf    = sdCircle(bRel, ball_size);
     // Roll: CW when moving right, CCW when moving left (rolling without slip)
     // rolling without slip: rotations = travel_distance / circumference
-    float rollAngle  = ball_roll * 2.0 * ball_travel / max(ball_size, 0.001);
+    float rollAngle  = (ball_roll + ball_roll_offset) * 2.0 * ball_travel / max(ball_size, 0.001);
     vec2  bRelN      = rot2(rollAngle) * (bRel / bs);
     float yarnA = (sdSegment(bRelN, vec2(-0.052,-0.016), vec2( 0.052, 0.016)) - 0.009) * bs;
     float yarnB = (sdSegment(bRelN, vec2(-0.038, 0.038), vec2( 0.038,-0.038)) - 0.009) * bs;
