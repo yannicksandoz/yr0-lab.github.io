@@ -144,11 +144,11 @@ void main() {
     float earAngle  = earManual + earAuto;
     vec2 uvEL = earPivL + rot2(-earAngle) * (uv - earPivL);
     vec2 uvER = earPivR + rot2( earAngle) * (uv - earPivR);
-    float earL = sdTriangle(uvEL, vec2(-0.36,0.06), vec2(-0.205,0.46), vec2(-0.09,0.10));
-    float earR = sdTriangle(uvER, vec2( 0.09,0.10), vec2( 0.205,0.46), vec2( 0.36,0.06));
+    float earL = sdTriangle(uvEL, vec2(-0.34,0.08), vec2(-0.205,0.42), vec2(-0.09,0.11));
+    float earR = sdTriangle(uvER, vec2( 0.09,0.11), vec2( 0.205,0.42), vec2( 0.34,0.08));
     float ears = min(earL, earR);
-    float innerEarL = sdTriangle(uvEL, vec2(-0.31,0.11), vec2(-0.205,0.39), vec2(-0.12,0.14));
-    float innerEarR = sdTriangle(uvER, vec2( 0.12,0.14), vec2( 0.205,0.39), vec2( 0.31,0.11));
+    float innerEarL = sdTriangle(uvEL, vec2(-0.28,0.13), vec2(-0.205,0.33), vec2(-0.13,0.16));
+    float innerEarR = sdTriangle(uvER, vec2( 0.13,0.16), vec2( 0.205,0.33), vec2( 0.28,0.13));
 
     // ======================================================== EYES
     vec2 eyeLPos = vec2(-0.135, 0.04);
