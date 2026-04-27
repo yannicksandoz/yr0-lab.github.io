@@ -21,12 +21,15 @@
     { "NAME": "tail_amp",      "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 3.0  },
     { "NAME": "tail_t",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
     { "NAME": "show_body",     "TYPE": "bool",  "DEFAULT": false  },
-    { "NAME": "neck_gap",      "TYPE": "float", "DEFAULT": 0.04,  "MIN": -0.20, "MAX": 0.28 },
+    { "NAME": "neck_gap",      "TYPE": "float", "DEFAULT": -0.10, "MIN": -0.20, "MAX": 0.28 },
     { "NAME": "body_scale",    "TYPE": "float", "DEFAULT": 0.65,  "MIN": 0.45,  "MAX": 0.90 },
     { "NAME": "paw_f_radius",  "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 0.35 },
     { "NAME": "paw_f_t",       "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
-    { "NAME": "paw_f_x",       "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
-    { "NAME": "paw_f_y",       "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
+    { "NAME": "paw_f_spread",  "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.15, "MAX": 0.30 },
+    { "NAME": "paw_f_l_x",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
+    { "NAME": "paw_f_l_y",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
+    { "NAME": "paw_f_r_x",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
+    { "NAME": "paw_f_r_y",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
     { "NAME": "paw_f_size",    "TYPE": "float", "DEFAULT": 0.098, "MIN": 0.04,  "MAX": 0.18 },
     { "NAME": "paw_b_radius",  "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 0.35 },
     { "NAME": "paw_b_t",       "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
@@ -39,7 +42,7 @@
     { "NAME": "ball_x",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.60, "MAX": 0.60 },
     { "NAME": "ball_y",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.60, "MAX": 0.60 },
     { "NAME": "ball_size",     "TYPE": "float", "DEFAULT": 0.062, "MIN": 0.02,  "MAX": 0.18 },
-    { "NAME": "ball_arc",      "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "ball_arc",      "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
     { "NAME": "tail_tip_x",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
     { "NAME": "tail_tip_y",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
     { "NAME": "tail_tip_size", "TYPE": "float", "DEFAULT": 0.028, "MIN": 0.01,  "MAX": 0.08 }
@@ -229,8 +232,8 @@ void main() {
     // ---- FRONT PAWS (paw_f): visible side paws, wider stance ----
     float pfAngle    = paw_f_t * 6.2832 + (animate ? t * 2.0 : 0.0);
     vec2  pfDelta    = paw_f_radius * vec2(cos(pfAngle), sin(pfAngle) * 0.65);
-    vec2  pfLCenter  = vec2(-0.26 + paw_f_x, bY - 0.13 + paw_f_y) + vec2(-pfDelta.x, pfDelta.y);
-    vec2  pfRCenter  = vec2( 0.26 + paw_f_x, bY - 0.13 + paw_f_y) + pfDelta;
+    vec2  pfLCenter  = vec2(-0.26 - paw_f_spread + paw_f_l_x, bY - 0.13 + paw_f_l_y) + vec2(-pfDelta.x, pfDelta.y);
+    vec2  pfRCenter  = vec2( 0.26 + paw_f_spread + paw_f_r_x, bY - 0.13 + paw_f_r_y) + pfDelta;
     vec2 pfLP = uv - pfLCenter; pfLP.y *= 0.72; pfLP.x *= 0.82;
     float pfL = sdCircle(pfLP, paw_f_size);
     vec2 pfRP = uv - pfRCenter; pfRP.y *= 0.72; pfRP.x *= 0.82;
