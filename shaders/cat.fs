@@ -49,7 +49,7 @@
     { "NAME": "ball_size",     "TYPE": "float", "DEFAULT": 0.062, "MIN": 0.02,  "MAX": 0.18 },
     { "NAME": "ball_arc",      "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
     { "NAME": "ball_roll",     "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
-    { "NAME": "ball_roll_len", "TYPE": "float", "DEFAULT": 1.0,   "MIN": 0.1,   "MAX": 8.0  },
+    { "NAME": "ball_travel",   "TYPE": "float", "DEFAULT": 0.18,  "MIN": 0.0,   "MAX": 0.60 },
     { "NAME": "tail_tip_x",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
     { "NAME": "tail_tip_y",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
     { "NAME": "tail_tip_size", "TYPE": "float", "DEFAULT": 0.028, "MIN": 0.01,  "MAX": 0.08 }
@@ -147,8 +147,8 @@ void main() {
     float earL = sdTriangle(uvEL, vec2(-0.34,0.08), vec2(-0.205,0.42), vec2(-0.09,0.11));
     float earR = sdTriangle(uvER, vec2( 0.09,0.11), vec2( 0.205,0.42), vec2( 0.34,0.08));
     float ears = min(earL, earR);
-    float innerEarL = sdTriangle(uvEL, vec2(-0.28,0.13), vec2(-0.205,0.33), vec2(-0.13,0.16));
-    float innerEarR = sdTriangle(uvER, vec2( 0.13,0.16), vec2( 0.205,0.33), vec2( 0.28,0.13));
+    float innerEarL = sdTriangle(uvEL, vec2(-0.27,0.17), vec2(-0.205,0.37), vec2(-0.13,0.20));
+    float innerEarR = sdTriangle(uvER, vec2( 0.13,0.20), vec2( 0.205,0.37), vec2( 0.27,0.17));
 
     // ======================================================== EYES
     vec2 eyeLPos = vec2(-0.135, 0.04);
@@ -284,7 +284,7 @@ void main() {
 
     // ---- BALL OF WOOL: rolling rotation + arc trajectory ----
     float ballAngle  = ball_t * 6.2832 + (animate ? t * 0.8 : 0.0);
-    float ballXOrbit = cos(ballAngle) * 0.18;
+    float ballXOrbit = cos(ballAngle) * ball_travel;
     // ball_arc=0: flat path. ball_arc=1: U-shape (ends elevated, center low).
     float ballArcY   = ball_arc * (cos(ballAngle)*cos(ballAngle) - 0.5) * 0.24;
     vec2  ballCenter = vec2(ballXOrbit + ball_x, bY - 0.36 + ballArcY + ball_y);
@@ -292,7 +292,8 @@ void main() {
     vec2  bRel       = uv - ballCenter;
     float ballSdf    = sdCircle(bRel, ball_size);
     // Roll: CW when moving right, CCW when moving left (rolling without slip)
-    float rollAngle  = ball_roll * 6.2832 * ball_roll_len;
+    // rolling without slip: rotations = travel_distance / circumference
+    float rollAngle  = ball_roll * 2.0 * ball_travel / max(ball_size, 0.001);
     vec2  bRelN      = rot2(rollAngle) * (bRel / bs);
     float yarnA = (sdSegment(bRelN, vec2(-0.052,-0.016), vec2( 0.052, 0.016)) - 0.009) * bs;
     float yarnB = (sdSegment(bRelN, vec2(-0.038, 0.038), vec2( 0.038,-0.038)) - 0.009) * bs;
