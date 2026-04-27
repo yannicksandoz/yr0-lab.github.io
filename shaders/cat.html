@@ -297,11 +297,12 @@
       float tSway=anim?sin(t*0.65)*(tail_amp*0.32):0.0;
       vec2 tPiv=vec2(0.24,bY);
       vec2 uvT=tPiv+rot2(-tSway)*(uv-tPiv);
-      vec2 tA=vec2(0.24,bY), tB=vec2(0.58,bY-0.08), tC=vec2(0.50,bY-0.30);
-      vec2 tD=vec2(0.36,bY-0.44), tE2=vec2(0.18,bY-0.28);
-      float tail_sdf=min(sdBezier(uvT,tA,tB,tC)-0.033,
-                         sdBezier(uvT,tC,tD,tE2)-0.024);
-      float tailTip=sdCircle(uvT-tE2, 0.024);
+      vec2 tA=vec2(0.24,bY), tB=vec2(0.58,bY-0.04), tC=vec2(0.54,bY-0.22);
+      vec2 tD=2.0*tC-tB, tE2=vec2(0.20,bY-0.30);
+      float tailW=0.028;
+      float tail_sdf=min(sdBezier(uvT,tA,tB,tC)-tailW,
+                         sdBezier(uvT,tC,tD,tE2)-tailW);
+      float tailTip=sdCircle(uvT-tE2,tailW);
 
       // Paws
       vec2 pawLP=uv-vec2(-0.13,bY-0.31); pawLP.y*=0.65;
@@ -350,7 +351,7 @@
 
       col=mix(col,vec3(0.90,0.38,0.50),fill(nose,aa));
       col=mix(col,vec3(0.28,0.10,0.14),step(mouth,0.0055)*fill(head,aa));
-      col=mix(col,vec3(0.95,0.95,0.98),step(whiskers,0.0028));
+      col=mix(col,vec3(0.95,0.95,0.98),fill(whiskers-0.0028,aa));
 
       gl_FragColor=vec4(col,1.0);
     }

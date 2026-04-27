@@ -199,15 +199,15 @@ void main() {
     vec2  uvT     = tailPiv + rot2(-tSway) * (uv - tailPiv);
 
     vec2 tA = vec2(0.24,  bY);
-    vec2 tB = vec2(0.58,  bY - 0.08);  // control: outward-right
-    vec2 tC = vec2(0.50,  bY - 0.30);  // mid-arc
-    vec2 tD = vec2(0.36,  bY - 0.44);  // control: curls inward
-    vec2 tE = vec2(0.18,  bY - 0.28);  // tip
+    vec2 tB = vec2(0.58,  bY - 0.04);  // control: rightward
+    vec2 tC = vec2(0.54,  bY - 0.22);  // C1 junction
+    vec2 tD = 2.0*tC - tB;             // mirror of tB through tC → C1 continuity
+    vec2 tE = vec2(0.20,  bY - 0.30);  // tip
 
-    float tail1   = sdBezier(uvT, tA, tB, tC) - 0.033;  // thicker at root
-    float tail2   = sdBezier(uvT, tC, tD, tE) - 0.024;  // tapers toward tip
-    float tail_sdf = min(tail1, tail2);
-    float tailTip  = sdCircle(uvT - tE, 0.024);          // smooth rounded tip
+    float tailW    = 0.028;
+    float tail_sdf = min(sdBezier(uvT, tA, tB, tC) - tailW,
+                         sdBezier(uvT, tC, tD, tE) - tailW);
+    float tailTip  = sdCircle(uvT - tE, tailW);
 
     // Front paws — flattened ovals at base of body
     vec2 pawLP = uv - vec2(-0.13, bY - 0.31); pawLP.y *= 0.65;
@@ -268,7 +268,7 @@ void main() {
     col = mix(col, vec3(0.28,0.10,0.14), step(mouth,0.0055)*fill(head,aa));
 
     // Whiskers — always on top
-    col = mix(col, vec3(0.95,0.95,0.98), step(whiskers,0.0028));
+    col = mix(col, vec3(0.95,0.95,0.98), fill(whiskers - 0.0028, aa));
 
     gl_FragColor = vec4(col, 1.0);
 }
