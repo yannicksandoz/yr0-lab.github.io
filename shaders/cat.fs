@@ -48,6 +48,8 @@
     { "NAME": "ball_y",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.60, "MAX": 0.60 },
     { "NAME": "ball_size",     "TYPE": "float", "DEFAULT": 0.062, "MIN": 0.02,  "MAX": 0.18 },
     { "NAME": "ball_arc",      "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
+    { "NAME": "ball_roll",     "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "ball_roll_len", "TYPE": "float", "DEFAULT": 1.0,   "MIN": 0.1,   "MAX": 8.0  },
     { "NAME": "tail_tip_x",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
     { "NAME": "tail_tip_y",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
     { "NAME": "tail_tip_size", "TYPE": "float", "DEFAULT": 0.028, "MIN": 0.01,  "MAX": 0.08 }
@@ -290,7 +292,7 @@ void main() {
     vec2  bRel       = uv - ballCenter;
     float ballSdf    = sdCircle(bRel, ball_size);
     // Roll: CW when moving right, CCW when moving left (rolling without slip)
-    float rollAngle  = ballXOrbit / max(ball_size, 0.02);
+    float rollAngle  = ball_roll * 6.2832 * ball_roll_len;
     vec2  bRelN      = rot2(rollAngle) * (bRel / bs);
     float yarnA = (sdSegment(bRelN, vec2(-0.052,-0.016), vec2( 0.052, 0.016)) - 0.009) * bs;
     float yarnB = (sdSegment(bRelN, vec2(-0.038, 0.038), vec2( 0.038,-0.038)) - 0.009) * bs;
