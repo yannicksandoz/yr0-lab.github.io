@@ -43,14 +43,12 @@
     { "NAME": "paw_b_size",    "TYPE": "float", "DEFAULT": 0.092, "MIN": 0.04,  "MAX": 0.18 },
     { "NAME": "show_ball",     "TYPE": "bool",  "DEFAULT": false  },
     { "NAME": "ball_color",    "TYPE": "color", "DEFAULT": [0.85, 0.15, 0.25, 1.0] },
-    { "NAME": "ball_t",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
     { "NAME": "ball_x",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
     { "NAME": "ball_y",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.60, "MAX": 0.60 },
+    { "NAME": "ball_pan",      "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
     { "NAME": "ball_size",     "TYPE": "float", "DEFAULT": 0.062, "MIN": 0.02,  "MAX": 0.18 },
-    { "NAME": "ball_arc",      "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
     { "NAME": "ball_roll",     "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
     { "NAME": "ball_travel",   "TYPE": "float", "DEFAULT": 0.18,  "MIN": 0.0,   "MAX": 0.60 },
-    { "NAME": "ball_roll_offset", "TYPE": "float", "DEFAULT": 0.0, "MIN": -1.0, "MAX": 1.0  },
     { "NAME": "tail_tip_x",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
     { "NAME": "tail_tip_y",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
     { "NAME": "tail_tip_size", "TYPE": "float", "DEFAULT": 0.028, "MIN": 0.01,  "MAX": 0.08 },
@@ -178,8 +176,8 @@ void main() {
     float jawD = mouth_open * 0.065;
     vec2 mCL = mix(vec2(-0.068,-0.158), vec2(-0.096,-0.182-jawD), mouth_open);
     vec2 mCR = mix(vec2( 0.068,-0.158), vec2( 0.096,-0.182-jawD), mouth_open);
-    vec2 mTL = vec2(mix(-0.105, -0.116, mouth_open), -0.145);
-    vec2 mTR = vec2(mix( 0.105,  0.116, mouth_open), -0.145);
+    vec2 mTL = vec2(-0.105, -0.145);
+    vec2 mTR = vec2( 0.105, -0.145);
     float philtrum  = sdSegment(uv, vec2(0.0,-0.100), vec2(0.0,-0.130));
     float mouthL2   = sdSegment(uv, vec2(0.0,-0.130), mCL);
     float mouthLtip = sdSegment(uv, mCL, mTL);
@@ -285,18 +283,13 @@ void main() {
     vec2 bellyP = uv - vec2(0.0, bY-0.04); bellyP.y *= 1.25;
     float belly = sdCircle(bellyP, 0.155);
 
-    // ---- BALL OF WOOL: rolling rotation + arc trajectory ----
-    float ballAngle  = ball_t * 6.2832 + (animate ? t * 0.8 : 0.0);
-    float ballXOrbit = cos(ballAngle) * ball_travel;
-    // ball_arc=0: flat path. ball_arc=1: U-shape (ends elevated, center low).
-    float ballArcY   = ball_arc * (cos(ballAngle)*cos(ballAngle) - 0.5) * 0.24;
-    vec2  ballCenter = vec2(ballXOrbit + ball_x, bY - 0.36 + ballArcY + ball_y);
+    // ---- BALL OF WOOL: ball_x = LFO, ball_pan = static offset, ball_roll = rotation LFO ----
+    vec2  ballCenter = vec2(ball_x + ball_pan, bY - 0.36 + ball_y);
     float bs         = ball_size / 0.062;
     vec2  bRel       = uv - ballCenter;
     float ballSdf    = sdCircle(bRel, ball_size);
-    // Roll: CW when moving right, CCW when moving left (rolling without slip)
-    // rolling without slip: rotations = travel_distance / circumference
-    float rollAngle  = (ball_roll + ball_roll_offset) * 2.0 * ball_travel / max(ball_size, 0.001);
+    // rolling without slip: one full rotation per ball_travel distance travelled
+    float rollAngle  = ball_roll * 2.0 * ball_travel / max(ball_size, 0.001);
     vec2  bRelN      = rot2(rollAngle) * (bRel / bs);
     float yarnA = (sdSegment(bRelN, vec2(-0.052,-0.016), vec2( 0.052, 0.016)) - 0.009) * bs;
     float yarnB = (sdSegment(bRelN, vec2(-0.038, 0.038), vec2( 0.038,-0.038)) - 0.009) * bs;
