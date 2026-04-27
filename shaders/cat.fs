@@ -22,7 +22,8 @@
     { "NAME": "whisker_t",     "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 1.0  },
     { "NAME": "tail_amp",      "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 3.0  },
     { "NAME": "tail_t",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
-    { "NAME": "tail_middle_x", "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.50, "MAX": 0.50 },
+    { "NAME": "tail_middle_x", "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
+    { "NAME": "tail_length",   "TYPE": "float", "DEFAULT": 1.0,   "MIN": 0.2,   "MAX": 2.5  },
     { "NAME": "show_body",     "TYPE": "bool",  "DEFAULT": false  },
     { "NAME": "neck_gap",      "TYPE": "float", "DEFAULT": -0.10, "MIN": -0.20, "MAX": 0.28 },
     { "NAME": "body_scale",    "TYPE": "float", "DEFAULT": 0.65,  "MIN": 0.45,  "MAX": 0.90 },
@@ -223,13 +224,15 @@ void main() {
     float tSwayH = tail_amp * 0.55 * cos(tailAngle);
     float tSwayV = tail_amp * 0.22 * sin(tailAngle);
     float tRX    = tail_middle_x;
+    float tL     = tail_length;
+    vec2  tRoot   = vec2(0.24 + tRX, bY);
     vec2  tailPiv = vec2(0.24 + tRX, bY + tSwayV);
     vec2  uvT     = tailPiv + rot2(-tSwayH) * (uv - tailPiv);
-    vec2 tA = vec2(0.24 + tRX, bY);
-    vec2 tB = vec2(0.58 + tRX, bY - 0.04);
-    vec2 tC = vec2(0.54 + tRX, bY - 0.22);
+    vec2 tA = tRoot;
+    vec2 tB = tRoot + vec2( 0.34, -0.04) * tL;
+    vec2 tC = tRoot + vec2( 0.30, -0.22) * tL;
     vec2 tD = 2.0*tC - tB;
-    vec2 tE = vec2(0.20 + tRX + tail_tip_x, bY - 0.30 + tail_tip_y);
+    vec2 tE = tRoot + vec2(-0.04, -0.30) * tL + vec2(tail_tip_x, tail_tip_y);
     float tailW    = tail_tip_size;
     float tail_sdf = min(sdBezier(uvT,tA,tB,tC)-tailW, sdBezier(uvT,tC,tD,tE)-tailW);
     float tailTip  = sdCircle(uvT - tE, tailW);
@@ -305,27 +308,27 @@ void main() {
 
     if (show_body) {
         // Tail with outline
-        col = mix(col, outlineCol, fill(tail_sdf + outW, aa));
+        col = mix(col, outlineCol, fill(tail_sdf - outW, aa));
         col = mix(col, fur, fill(tail_sdf, aa));
-        col = mix(col, outlineCol, fill(tailTip + outW, aa));
+        col = mix(col, outlineCol, fill(tailTip - outW, aa));
         col = mix(col, fur, fill(tailTip, aa));
         // Back paws behind body, with outline + toes
-        col = mix(col, outlineCol, fill(pbL + outW, aa));
+        col = mix(col, outlineCol, fill(pbL - outW, aa));
         col = mix(col, fur, fill(pbL, aa));
         col = mix(col, fur*0.55, fill(toeBL-0.004,aa)*fill(pbL,aa));
-        col = mix(col, outlineCol, fill(pbR + outW, aa));
+        col = mix(col, outlineCol, fill(pbR - outW, aa));
         col = mix(col, fur, fill(pbR, aa));
         col = mix(col, fur*0.55, fill(toeBR-0.004,aa)*fill(pbR,aa));
         // Neck + body with outline
-        col = mix(col, outlineCol, fill(neck_sdf + outW, aa));
+        col = mix(col, outlineCol, fill(neck_sdf - outW, aa));
         col = mix(col, fur, fill(neck_sdf, aa));
-        col = mix(col, outlineCol, fill(body_sdf + outW, aa));
+        col = mix(col, outlineCol, fill(body_sdf - outW, aa));
         col = mix(col, fur, fill(body_sdf, aa));
         col = mix(col, mix(fur,vec3(1.0),0.45), fill(belly,aa)*fill(body_sdf,aa));
     }
 
     // Head + ears + face (below ball and front paws)
-    col = mix(col, outlineCol, fill(min(head,ears) + outW, aa));
+    col = mix(col, outlineCol, fill(min(head,ears) - outW, aa));
     col = mix(col, fur, fill(min(head,ears), aa));
     col = mix(col, vec3(0.96,0.60,0.68), fill(innerEarL, aa));
     col = mix(col, vec3(0.96,0.60,0.68), fill(innerEarR, aa));
@@ -353,10 +356,10 @@ void main() {
 
     // Front paws on top of ball
     if (show_body) {
-        col = mix(col, outlineCol, fill(pfL + outW, aa));
+        col = mix(col, outlineCol, fill(pfL - outW, aa));
         col = mix(col, fur, fill(pfL, aa));
         col = mix(col, fur*0.55, fill(toeL-0.004,aa)*fill(pfL,aa));
-        col = mix(col, outlineCol, fill(pfR + outW, aa));
+        col = mix(col, outlineCol, fill(pfR - outW, aa));
         col = mix(col, fur, fill(pfR, aa));
         col = mix(col, fur*0.55, fill(toeR-0.004,aa)*fill(pfR,aa));
     }
