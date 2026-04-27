@@ -1,32 +1,56 @@
 /*{
-  "DESCRIPTION": "Procedural cat — head and optional body, all drawn with signed distance functions.",
+  "DESCRIPTION": "Procedural cat — head and body with full manual + auto animation controls.",
   "CREDIT": "yr0-lab",
   "ISFVSN": "2",
   "CATEGORIES": ["Generator"],
   "INPUTS": [
-    { "NAME": "fur_color",    "TYPE": "color", "DEFAULT": [0.78, 0.58, 0.38, 1.0] },
-    { "NAME": "eye_color",    "TYPE": "color", "DEFAULT": [0.18, 0.72, 0.28, 1.0] },
-    { "NAME": "bg_color",     "TYPE": "color", "DEFAULT": [0.05, 0.05, 0.12, 1.0] },
-    { "NAME": "pupil_dilation","TYPE": "float","DEFAULT": 0.4,  "MIN": 0.0, "MAX": 1.0 },
-    { "NAME": "animate",      "TYPE": "bool",  "DEFAULT": true },
-    { "NAME": "blink_rate",   "TYPE": "float", "DEFAULT": 1.0,  "MIN": 0.2, "MAX": 4.0 },
-    { "NAME": "bob_amp",      "TYPE": "float", "DEFAULT": 0.5,  "MIN": 0.0, "MAX": 1.0 },
-    { "NAME": "ear_amp",      "TYPE": "float", "DEFAULT": 0.5,  "MIN": 0.0, "MAX": 1.0 },
-    { "NAME": "whisker_amp",  "TYPE": "float", "DEFAULT": 0.5,  "MIN": 0.0, "MAX": 1.0 },
-    { "NAME": "tail_amp",     "TYPE": "float", "DEFAULT": 0.5,  "MIN": 0.0, "MAX": 1.0 },
-    { "NAME": "show_body",    "TYPE": "bool",  "DEFAULT": false },
-    { "NAME": "neck_gap",     "TYPE": "float", "DEFAULT": 0.04, "MIN": -0.20, "MAX": 0.28 },
-    { "NAME": "body_scale",   "TYPE": "float", "DEFAULT": 0.65, "MIN": 0.45,"MAX": 0.90 }
+    { "NAME": "fur_color",     "TYPE": "color", "DEFAULT": [0.78, 0.58, 0.38, 1.0] },
+    { "NAME": "eye_color",     "TYPE": "color", "DEFAULT": [0.18, 0.72, 0.28, 1.0] },
+    { "NAME": "bg_color",      "TYPE": "color", "DEFAULT": [0.05, 0.05, 0.12, 1.0] },
+    { "NAME": "pupil_dilation","TYPE": "float", "DEFAULT": 0.4,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "mouth_open",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "animate",       "TYPE": "bool",  "DEFAULT": true   },
+    { "NAME": "blink_rate",    "TYPE": "float", "DEFAULT": 1.0,   "MIN": 0.2,   "MAX": 4.0  },
+    { "NAME": "blink_t",       "TYPE": "float", "DEFAULT": 1.0,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "bob_amp",       "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "bob_t",         "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "ear_amp",       "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "ear_t",         "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "whisker_amp",   "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "whisker_t",     "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "tail_amp",      "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "tail_t",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "show_body",     "TYPE": "bool",  "DEFAULT": false  },
+    { "NAME": "neck_gap",      "TYPE": "float", "DEFAULT": 0.04,  "MIN": -0.20, "MAX": 0.28 },
+    { "NAME": "body_scale",    "TYPE": "float", "DEFAULT": 0.65,  "MIN": 0.45,  "MAX": 0.90 },
+    { "NAME": "paw_f_radius",  "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 0.35 },
+    { "NAME": "paw_f_t",       "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "paw_f_x",       "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
+    { "NAME": "paw_f_y",       "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
+    { "NAME": "paw_f_size",    "TYPE": "float", "DEFAULT": 0.098, "MIN": 0.04,  "MAX": 0.18 },
+    { "NAME": "paw_b_radius",  "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 0.35 },
+    { "NAME": "paw_b_t",       "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "paw_b_x",       "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
+    { "NAME": "paw_b_y",       "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
+    { "NAME": "paw_b_size",    "TYPE": "float", "DEFAULT": 0.092, "MIN": 0.04,  "MAX": 0.18 },
+    { "NAME": "show_ball",     "TYPE": "bool",  "DEFAULT": false  },
+    { "NAME": "ball_color",    "TYPE": "color", "DEFAULT": [0.85, 0.15, 0.25, 1.0] },
+    { "NAME": "ball_t",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "ball_x",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.60, "MAX": 0.60 },
+    { "NAME": "ball_y",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.60, "MAX": 0.60 },
+    { "NAME": "ball_size",     "TYPE": "float", "DEFAULT": 0.062, "MIN": 0.02,  "MAX": 0.18 },
+    { "NAME": "ball_arc",      "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "tail_tip_x",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
+    { "NAME": "tail_tip_y",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.40, "MAX": 0.40 },
+    { "NAME": "tail_tip_size", "TYPE": "float", "DEFAULT": 0.028, "MIN": 0.01,  "MAX": 0.08 }
   ]
 }*/
-
-// ------------------------------------------------------------------ SDFs
 
 float sdCircle(vec2 p, float r) { return length(p) - r; }
 
 float sdBox(vec2 p, vec2 b) {
     vec2 d = abs(p) - b;
-    return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+    return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
 }
 
 float sdTriangle(vec2 p, vec2 a, vec2 b, vec2 c) {
@@ -47,7 +71,6 @@ float sdSegment(vec2 p, vec2 a, vec2 b) {
     return length(pa - ba*clamp(dot(pa,ba)/dot(ba,ba),0.0,1.0));
 }
 
-// Quadratic Bezier SDF — returns distance to the curve (unsigned)
 float sdBezier(vec2 pos, vec2 A, vec2 B, vec2 C) {
     vec2 a=B-A, b=A-2.0*B+C, c=a*2.0, d=A-pos;
     float kk=1.0/dot(b,b);
@@ -63,8 +86,7 @@ float sdBezier(vec2 pos, vec2 A, vec2 B, vec2 C) {
         vec2 x=(vec2(h,-h)-q)/2.0;
         vec2 uv2=sign(x)*pow(abs(x),vec2(1.0/3.0));
         float t2=clamp(uv2.x+uv2.y-kx,0.0,1.0);
-        vec2 qos=d+(c+b*t2)*t2;
-        res=dot(qos,qos);
+        vec2 qos=d+(c+b*t2)*t2; res=dot(qos,qos);
     } else {
         float z=sqrt(-p);
         float v=acos(q/(p*z*2.0))/3.0;
@@ -77,183 +99,205 @@ float sdBezier(vec2 pos, vec2 A, vec2 B, vec2 C) {
     return sqrt(res);
 }
 
-// CCW rotation matrix (GLSL column-major)
-mat2 rot2(float a) { float c=cos(a),s=sin(a); return mat2(c,s,-s,c); }
-
-float fill(float d, float aa) { return smoothstep(aa,-aa,d); }
-
-// ------------------------------------------------------------------ main
+mat2 rot2(float a){ float c=cos(a),s=sin(a); return mat2(c,s,-s,c); }
+float fill(float d, float aa){ return smoothstep(aa,-aa,d); }
 
 void main() {
     vec2 uv = isf_FragNormCoord.xy * 2.0 - 1.0;
     uv.x *= RENDERSIZE.x / RENDERSIZE.y;
     float aa = 1.5 / min(RENDERSIZE.x, RENDERSIZE.y);
 
-    // Scene scale — zoom out to frame head + body
     float sc = show_body ? body_scale : 1.0;
     uv = uv / sc + vec2(0.0, show_body ? -0.28 : 0.0);
 
-    // ---- Timing ----
     float t = animate ? TIME : 0.0;
 
-    float bp    = mod(t * blink_rate, 5.0);
-    float blink = 1.0 - smoothstep(0.0,0.06,bp)*(1.0-smoothstep(0.06,0.22,bp));
+    // ---- BLINK ----
+    float bp = mod(t * blink_rate, 5.0);
+    float blinkAuto = 1.0 - smoothstep(0.0,0.06,bp)*(1.0-smoothstep(0.06,0.22,bp));
+    float blink = animate ? blinkAuto : blink_t;
 
-    float bobA = bob_amp * 0.016;
-    uv.y -= animate ? sin(t*1.1)*bobA : 0.0;
+    // ---- BOB ---- (wider range)
+    float bobManual = (bob_t - 0.5) * 2.0 * 0.030;
+    float bobAuto   = animate ? sin(t*1.1)*(bob_amp*0.030) : 0.0;
+    uv.y -= bobManual + bobAuto;
 
-    // ---------------------------------------------------------------- HEAD
+    // ======================================================== HEAD
     vec2 headP = uv; headP.y *= 1.08;
     float head = sdCircle(headP, 0.38);
 
-    // ---------------------------------------------------------------- EARS
-    // Narrower triangles; tip oscillates via pivot rotation around base midpoint
+    // ======================================================== EARS (wider range)
     vec2 earPivL = vec2(-0.205, 0.188);
     vec2 earPivR = vec2( 0.205, 0.188);
-    float earAngle = animate ? sin(t*2.1+0.5)*(ear_amp*0.11) : 0.0;
-
-    // Rotate sample point by -angle around pivot → object appears rotated by +angle
+    float earManual = (ear_t - 0.5) * 2.0 * 0.20;
+    float earAuto   = animate ? sin(t*2.1+0.5)*(ear_amp*0.20) : 0.0;
+    float earAngle  = earManual + earAuto;
     vec2 uvEL = earPivL + rot2(-earAngle) * (uv - earPivL);
     vec2 uvER = earPivR + rot2( earAngle) * (uv - earPivR);
-
     float earL = sdTriangle(uvEL, vec2(-0.33,0.17), vec2(-0.205,0.46), vec2(-0.10,0.21));
     float earR = sdTriangle(uvER, vec2( 0.10,0.21), vec2( 0.205,0.46), vec2( 0.33,0.17));
     float ears = min(earL, earR);
-
     float innerEarL = sdTriangle(uvEL, vec2(-0.29,0.19), vec2(-0.205,0.39), vec2(-0.13,0.22));
     float innerEarR = sdTriangle(uvER, vec2( 0.13,0.22), vec2( 0.205,0.39), vec2( 0.29,0.19));
 
-    // ---------------------------------------------------------------- EYES
+    // ======================================================== EYES
     vec2 eyeLPos = vec2(-0.135, 0.04);
     vec2 eyeRPos = vec2( 0.135, 0.04);
     float eR = 0.078;
     float eyeL  = sdCircle(uv - eyeLPos, eR);
     float eyeR2 = sdCircle(uv - eyeRPos, eR);
-
     float breathe = animate ? 0.5+0.5*sin(t*0.5) : 0.5;
-    float slitW = clamp(mix(0.007, eR*0.82, pupil_dilation+breathe*0.14), 0.007, eR*0.88);
+    float slitW = clamp(mix(0.007,eR*0.82,pupil_dilation+breathe*0.14), 0.007, eR*0.88);
     float pupilL = sdBox(uv - eyeLPos, vec2(slitW, eR*0.86));
     float pupilR = sdBox(uv - eyeRPos, vec2(slitW, eR*0.86));
-
-    // Eyelid: at blink=1 (open) center sits 2.3R above eye → fully outside eye circle
     float lidH  = eR * 1.12;
     vec2  lidCL = eyeLPos + vec2(0.0, eR*2.3*blink);
     vec2  lidCR = eyeRPos + vec2(0.0, eR*2.3*blink);
     float lidL  = sdBox(uv - lidCL, vec2(eR*1.18, lidH));
     float lidR2 = sdBox(uv - lidCR, vec2(eR*1.18, lidH));
+    float shineL = sdCircle(uv - eyeLPos - vec2(0.022,0.026), 0.017);
+    float shineR = sdCircle(uv - eyeRPos - vec2(0.022,0.026), 0.017);
 
-    vec2  shineOff = vec2(0.022, 0.026);
-    float shineL   = sdCircle(uv - eyeLPos - shineOff, 0.017);
-    float shineR   = sdCircle(uv - eyeRPos - shineOff, 0.017);
-
-    // ---------------------------------------------------------------- NOSE
+    // ======================================================== NOSE
     float nose = sdTriangle(uv, vec2(-0.034,-0.072), vec2(0.0,-0.100), vec2(0.034,-0.072));
 
-    // ---------------------------------------------------------------- MOUTH
+    // ======================================================== MOUTH + MEOW (aligned interior)
+    float jawD = mouth_open * 0.065;
+    vec2 mCL = mix(vec2(-0.068,-0.158), vec2(-0.096,-0.182-jawD), mouth_open);
+    vec2 mCR = mix(vec2( 0.068,-0.158), vec2( 0.096,-0.182-jawD), mouth_open);
+    vec2 mTL = mix(vec2(-0.105,-0.145), vec2(-0.114,-0.172-jawD), mouth_open);
+    vec2 mTR = mix(vec2( 0.105,-0.145), vec2( 0.114,-0.172-jawD), mouth_open);
     float philtrum  = sdSegment(uv, vec2(0.0,-0.100), vec2(0.0,-0.130));
-    float mouthL2   = sdSegment(uv, vec2(0.0,-0.130), vec2(-0.068,-0.158));
-    float mouthLtip = sdSegment(uv, vec2(-0.068,-0.158), vec2(-0.105,-0.145));
-    float mouthR2   = sdSegment(uv, vec2(0.0,-0.130), vec2( 0.068,-0.158));
-    float mouthRtip = sdSegment(uv, vec2( 0.068,-0.158), vec2( 0.105,-0.145));
-    float mouth     = min(min(philtrum,mouthL2), min(mouthLtip,min(mouthR2,mouthRtip)));
+    float mouthL2   = sdSegment(uv, vec2(0.0,-0.130), mCL);
+    float mouthLtip = sdSegment(uv, mCL, mTL);
+    float mouthR2   = sdSegment(uv, vec2(0.0,-0.130), mCR);
+    float mouthRtip = sdSegment(uv, mCR, mTR);
+    float mouth = min(min(philtrum,mouthL2), min(mouthLtip,min(mouthR2,mouthRtip)));
+    // Interior center tracks actual gap midpoint
+    float mBotY    = mix(-0.158, -0.182 - jawD, mouth_open);
+    float mCenterY = (-0.130 + mBotY) * 0.5;
+    float mInteriorR = mouth_open * 0.055;
+    vec2 mIntP = uv - vec2(0.0, mCenterY); mIntP.x /= 0.72;
+    float mInterior = sdCircle(mIntP, mInteriorR);
+    vec2 tongueP = uv - vec2(0.0, mCenterY - mInteriorR * 0.3); tongueP.x /= 0.68;
+    float tongue = sdCircle(tongueP, mInteriorR * 0.65);
 
-    // ---------------------------------------------------------------- WHISKERS
-    vec2  wRootL = vec2(-0.048,-0.096);
-    vec2  wRootR = vec2( 0.048,-0.096);
-    float wSway  = animate ? sin(t*1.65)*(whisker_amp*0.10) : 0.0;
-    vec2  uvWL   = wRootL + rot2(-wSway) * (uv - wRootL);
-    vec2  uvWR   = wRootR + rot2( wSway) * (uv - wRootR);
-    float wL1=sdSegment(uvWL, wRootL, wRootL+vec2(-0.335, 0.032));
-    float wL2=sdSegment(uvWL, wRootL, wRootL+vec2(-0.335, 0.000));
-    float wL3=sdSegment(uvWL, wRootL, wRootL+vec2(-0.335,-0.040));
-    float wR1=sdSegment(uvWR, wRootR, wRootR+vec2( 0.335, 0.032));
-    float wR2=sdSegment(uvWR, wRootR, wRootR+vec2( 0.335, 0.000));
-    float wR3=sdSegment(uvWR, wRootR, wRootR+vec2( 0.335,-0.040));
+    // ======================================================== WHISKERS (wider range)
+    vec2 wRootL = vec2(-0.048,-0.096);
+    vec2 wRootR = vec2( 0.048,-0.096);
+    float wManual = (whisker_t - 0.5) * 2.0 * 0.18;
+    float wAuto   = animate ? sin(t*1.65)*(whisker_amp*0.18) : 0.0;
+    float wSway   = wManual + wAuto;
+    vec2 uvWL = wRootL + rot2(-wSway) * (uv - wRootL);
+    vec2 uvWR = wRootR + rot2( wSway) * (uv - wRootR);
+    float wL1=sdSegment(uvWL,wRootL,wRootL+vec2(-0.335, 0.032));
+    float wL2=sdSegment(uvWL,wRootL,wRootL+vec2(-0.335, 0.000));
+    float wL3=sdSegment(uvWL,wRootL,wRootL+vec2(-0.335,-0.040));
+    float wR1=sdSegment(uvWR,wRootR,wRootR+vec2( 0.335, 0.032));
+    float wR2=sdSegment(uvWR,wRootR,wRootR+vec2( 0.335, 0.000));
+    float wR3=sdSegment(uvWR,wRootR,wRootR+vec2( 0.335,-0.040));
     float whiskers = min(min(wL1,wL2), min(wL3, min(min(wR1,wR2),wR3)));
 
-    // ---------------------------------------------------------------- FOREHEAD STRIPES
+    // ======================================================== FOREHEAD STRIPES
     float strM=sdSegment(uv, vec2( 0.000,0.22), vec2( 0.000,0.36));
     float strL=sdSegment(uv, vec2(-0.095,0.20), vec2(-0.065,0.34));
     float strR=sdSegment(uv, vec2( 0.095,0.20), vec2( 0.065,0.34));
     float stripes = min(strM, min(strL, strR));
 
-    // ---------------------------------------------------------------- BODY
-    // bY: body center Y.  -0.352 = 0.38/1.08 (head ellipse y-radius = head bottom)
-    // neck_gap=0 → body top exactly meets head bottom, no gap, no neck box
+    // ======================================================== BODY
     float bY = -0.632 - neck_gap;
-
-    // Neck — invisible at gap<=0 (head overlaps body), grows proportionally above 0
     float neckHalf = max(0.0, neck_gap * 0.5);
-    float neckCY   = (-0.352 + bY + 0.28) * 0.5;
-    float neck_sdf = sdBox(uv - vec2(0.0, neckCY), vec2(0.108, neckHalf));
-
-    // Body oval — slightly wider than tall
-    vec2 bodyP = uv - vec2(0.0, bY);
-    bodyP.x /= 0.88;
+    float neck_sdf = sdBox(uv - vec2(0.0, (-0.352+bY+0.28)*0.5), vec2(0.108, neckHalf));
+    vec2 bodyP = uv - vec2(0.0, bY); bodyP.x /= 0.88;
     float body_sdf = sdCircle(bodyP, 0.28);
 
-    // Tail — two chained quadratic Beziers → smooth C-curve
-    // Pivots at the right flank so the whole tail sways as one piece
-    float tSway  = animate ? sin(t*0.65)*(tail_amp*0.32) : 0.0;
-    vec2  tailPiv = vec2(0.24, bY);
-    vec2  uvT     = tailPiv + rot2(-tSway) * (uv - tailPiv);
-
-    vec2 tA = vec2(0.24,  bY);
-    vec2 tB = vec2(0.58,  bY - 0.04);  // control: rightward
-    vec2 tC = vec2(0.54,  bY - 0.22);  // C1 junction
-    vec2 tD = 2.0*tC - tB;             // mirror of tB through tC → C1 continuity
-    vec2 tE = vec2(0.20,  bY - 0.30);  // tip
-
-    float tailW    = 0.028;
-    float tail_sdf = min(sdBezier(uvT, tA, tB, tC) - tailW,
-                         sdBezier(uvT, tC, tD, tE) - tailW);
+    // ---- TAIL: circular phase motion (wider range) ----
+    float tailAngle = tail_t * 6.2832 + (animate ? t * 0.65 : 0.0);
+    float tSwayH = tail_amp * 0.55 * cos(tailAngle);
+    float tSwayV = tail_amp * 0.22 * sin(tailAngle);
+    vec2  tailPiv = vec2(0.24, bY + tSwayV);
+    vec2  uvT     = tailPiv + rot2(-tSwayH) * (uv - tailPiv);
+    vec2 tA = vec2(0.24, bY);
+    vec2 tB = vec2(0.58, bY - 0.04);
+    vec2 tC = vec2(0.54, bY - 0.22);
+    vec2 tD = 2.0*tC - tB;
+    vec2 tE = vec2(0.20 + tail_tip_x, bY - 0.30 + tail_tip_y);
+    float tailW    = tail_tip_size;
+    float tail_sdf = min(sdBezier(uvT,tA,tB,tC)-tailW, sdBezier(uvT,tC,tD,tE)-tailW);
     float tailTip  = sdCircle(uvT - tE, tailW);
 
-    // Front paws — flattened ovals at base of body
-    vec2 pawLP = uv - vec2(-0.13, bY - 0.31); pawLP.y *= 0.65;
-    float pawL2 = sdCircle(pawLP, 0.092);
-    vec2 pawRP = uv - vec2( 0.13, bY - 0.31); pawRP.y *= 0.65;
-    float pawR3 = sdCircle(pawRP, 0.092);
+    // ---- FRONT PAWS (paw_f): visible side paws, wider stance ----
+    float pfAngle    = paw_f_t * 6.2832 + (animate ? t * 2.0 : 0.0);
+    vec2  pfDelta    = paw_f_radius * vec2(cos(pfAngle), sin(pfAngle) * 0.65);
+    vec2  pfLCenter  = vec2(-0.26 + paw_f_x, bY - 0.13 + paw_f_y) + vec2(-pfDelta.x, pfDelta.y);
+    vec2  pfRCenter  = vec2( 0.26 + paw_f_x, bY - 0.13 + paw_f_y) + pfDelta;
+    vec2 pfLP = uv - pfLCenter; pfLP.y *= 0.72; pfLP.x *= 0.82;
+    float pfL = sdCircle(pfLP, paw_f_size);
+    vec2 pfRP = uv - pfRCenter; pfRP.y *= 0.72; pfRP.x *= 0.82;
+    float pfR = sdCircle(pfRP, paw_f_size);
+    // Toes on front paws, scale with size
+    float ps = paw_f_size / 0.098;
+    float toeL = min(min(
+        sdSegment(uv, pfLCenter+vec2(-0.055,-0.02)*ps, pfLCenter+vec2(-0.055,-0.07)*ps),
+        sdSegment(uv, pfLCenter+vec2( 0.000,-0.03)*ps, pfLCenter+vec2( 0.000,-0.08)*ps)),
+        sdSegment(uv, pfLCenter+vec2( 0.055,-0.02)*ps, pfLCenter+vec2( 0.055,-0.07)*ps));
+    float toeR = min(min(
+        sdSegment(uv, pfRCenter+vec2(-0.055,-0.02)*ps, pfRCenter+vec2(-0.055,-0.07)*ps),
+        sdSegment(uv, pfRCenter+vec2( 0.000,-0.03)*ps, pfRCenter+vec2( 0.000,-0.08)*ps)),
+        sdSegment(uv, pfRCenter+vec2( 0.055,-0.02)*ps, pfRCenter+vec2( 0.055,-0.07)*ps));
 
-    // Belly highlight
-    vec2 bellyP = uv - vec2(0.0, bY - 0.04); bellyP.y *= 1.25;
+    // ---- BACK PAWS (paw_b): tucked bottom paws ----
+    float pbAngle    = paw_b_t * 6.2832 + (animate ? t * 2.5 : 0.0);
+    vec2  pbDelta    = paw_b_radius * vec2(cos(pbAngle), sin(pbAngle) * 0.55);
+    vec2  pbLCenter  = vec2(-0.13 + paw_b_x, bY - 0.31 + paw_b_y) + vec2(-pbDelta.x, pbDelta.y);
+    vec2  pbRCenter  = vec2( 0.13 + paw_b_x, bY - 0.31 + paw_b_y) + pbDelta;
+    vec2 pbLP = uv - pbLCenter; pbLP.y *= 0.65;
+    float pbL = sdCircle(pbLP, paw_b_size);
+    vec2 pbRP = uv - pbRCenter; pbRP.y *= 0.65;
+    float pbR = sdCircle(pbRP, paw_b_size);
+
+    // ---- BELLY ----
+    vec2 bellyP = uv - vec2(0.0, bY-0.04); bellyP.y *= 1.25;
     float belly = sdCircle(bellyP, 0.155);
 
-    // Toe lines — three short dashes per paw
-    float toeL = min(min(
-        sdSegment(uv, vec2(-0.20, bY-0.33), vec2(-0.20, bY-0.38)),
-        sdSegment(uv, vec2(-0.13, bY-0.34), vec2(-0.13, bY-0.39))),
-        sdSegment(uv, vec2(-0.06, bY-0.33), vec2(-0.06, bY-0.38)));
-    float toeR = min(min(
-        sdSegment(uv, vec2( 0.06, bY-0.33), vec2( 0.06, bY-0.38)),
-        sdSegment(uv, vec2( 0.13, bY-0.34), vec2( 0.13, bY-0.39))),
-        sdSegment(uv, vec2( 0.20, bY-0.33), vec2( 0.20, bY-0.38)));
-    float toes = min(toeL, toeR);
+    // ---- BALL OF WOOL: rolling rotation + arc trajectory ----
+    float ballAngle  = ball_t * 6.2832 + (animate ? t * 0.8 : 0.0);
+    float ballXOrbit = cos(ballAngle) * 0.18;
+    // ball_arc=0: flat path. ball_arc=1: U-shape (ends elevated, center low).
+    float ballArcY   = ball_arc * (cos(ballAngle)*cos(ballAngle) - 0.5) * 0.24;
+    vec2  ballCenter = vec2(ballXOrbit + ball_x, bY - 0.36 + ballArcY + ball_y);
+    float bs         = ball_size / 0.062;
+    vec2  bRel       = uv - ballCenter;
+    float ballSdf    = sdCircle(bRel, ball_size);
+    // Roll: CW when moving right, CCW when moving left (rolling without slip)
+    float rollAngle  = -ballXOrbit / max(ball_size, 0.02);
+    vec2  bRelN      = rot2(rollAngle) * (bRel / bs);
+    float yarnA = (sdSegment(bRelN, vec2(-0.052,-0.016), vec2( 0.052, 0.016)) - 0.009) * bs;
+    float yarnB = (sdSegment(bRelN, vec2(-0.038, 0.038), vec2( 0.038,-0.038)) - 0.009) * bs;
+    float yarnC = (sdSegment(bRelN, vec2(-0.052, 0.000), vec2( 0.052, 0.000)) - 0.007) * bs;
+    float yarn   = min(min(yarnA,yarnB),yarnC);
+    float ballShine = sdCircle(bRelN - vec2(0.018,0.018), 0.014) * bs;
 
-    // ---------------------------------------------------------------- COMPOSITING
-    vec3 col  = bg_color.rgb;
-    vec3 fur  = fur_color.rgb;
-    vec3 pink = vec3(0.96, 0.60, 0.68);
+    // ======================================================== COMPOSITING
+    // Draw order: body-bg → head+face → ball (over head) → front paws (over ball)
+    vec3 col = bg_color.rgb;
+    vec3 fur = fur_color.rgb;
 
-    // Body layer — drawn first so head occludes it
     if (show_body) {
         col = mix(col, fur, fill(tail_sdf, aa));
         col = mix(col, fur, fill(tailTip,  aa));
         col = mix(col, fur, fill(neck_sdf, aa));
         col = mix(col, fur, fill(body_sdf, aa));
         col = mix(col, mix(fur,vec3(1.0),0.45), fill(belly,aa)*fill(body_sdf,aa));
-        col = mix(col, fur, fill(pawL2, aa));
-        col = mix(col, fur, fill(pawR3, aa));
-        col = mix(col, fur*0.55, step(toes,0.0045)*(fill(pawL2,aa)+fill(pawR3,aa)));
+        col = mix(col, fur, fill(pbL, aa));
+        col = mix(col, fur, fill(pbR, aa));
     }
 
-    // Head + ears
+    // Head + ears + face (below ball and front paws)
     col = mix(col, fur, fill(min(head,ears), aa));
-    col = mix(col, pink, fill(innerEarL, aa));
-    col = mix(col, pink, fill(innerEarR, aa));
-    col = mix(col, fur*0.55, step(stripes,0.006)*fill(head,aa));
-
-    // Eyes
+    col = mix(col, vec3(0.96,0.60,0.68), fill(innerEarL, aa));
+    col = mix(col, vec3(0.96,0.60,0.68), fill(innerEarR, aa));
+    col = mix(col, fur*0.55, fill(stripes-0.006,aa)*fill(head,aa));
     col = mix(col, eye_color.rgb, fill(eyeL,  aa));
     col = mix(col, eye_color.rgb, fill(eyeR2, aa));
     col = mix(col, vec3(0.03,0.02,0.04), fill(pupilL,aa)*fill(eyeL, aa)*blink);
@@ -262,13 +306,26 @@ void main() {
     col = mix(col, vec3(1.0), fill(shineR,aa)*fill(eyeR2,aa)*blink);
     col = mix(col, fur, fill(lidL, aa)*fill(eyeL, aa));
     col = mix(col, fur, fill(lidR2,aa)*fill(eyeR2,aa));
-
-    // Nose + mouth
     col = mix(col, vec3(0.90,0.38,0.50), fill(nose, aa));
-    col = mix(col, vec3(0.28,0.10,0.14), step(mouth,0.0055)*fill(head,aa));
+    col = mix(col, vec3(0.11,0.03,0.05), fill(mInterior,aa)*fill(head,aa));
+    col = mix(col, vec3(0.91,0.44,0.50), fill(tongue,   aa)*fill(head,aa));
+    col = mix(col, vec3(0.28,0.10,0.14), fill(mouth-0.0052,aa)*fill(head,aa));
+    col = mix(col, vec3(0.95,0.95,0.98), fill(whiskers-0.0028,aa));
 
-    // Whiskers — always on top
-    col = mix(col, vec3(0.95,0.95,0.98), fill(whiskers - 0.0028, aa));
+    // Ball over head, under front paws
+    if (show_ball) {
+        col = mix(col, ball_color.rgb, fill(ballSdf, aa));
+        col = mix(col, ball_color.rgb*0.60, fill(yarn,aa)*fill(ballSdf,aa));
+        col = mix(col, vec3(1.0), fill(ballShine,aa)*fill(ballSdf,aa));
+    }
+
+    // Front paws on top of ball
+    if (show_body) {
+        col = mix(col, fur, fill(pfL, aa));
+        col = mix(col, fur, fill(pfR, aa));
+        col = mix(col, fur*0.55, fill(toeL-0.004,aa)*fill(pfL,aa));
+        col = mix(col, fur*0.55, fill(toeR-0.004,aa)*fill(pfR,aa));
+    }
 
     gl_FragColor = vec4(col, 1.0);
 }
