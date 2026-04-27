@@ -18,7 +18,7 @@
     { "NAME": "ear_t",         "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 1.0  },
     { "NAME": "whisker_amp",   "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 1.0  },
     { "NAME": "whisker_t",     "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 1.0  },
-    { "NAME": "tail_amp",      "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 1.0  },
+    { "NAME": "tail_amp",      "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,   "MAX": 3.0  },
     { "NAME": "tail_t",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,   "MAX": 1.0  },
     { "NAME": "show_body",     "TYPE": "bool",  "DEFAULT": false  },
     { "NAME": "neck_gap",      "TYPE": "float", "DEFAULT": 0.04,  "MIN": -0.20, "MAX": 0.28 },
@@ -255,6 +255,15 @@ void main() {
     float pbL = sdCircle(pbLP, paw_b_size);
     vec2 pbRP = uv - pbRCenter; pbRP.y *= 0.65;
     float pbR = sdCircle(pbRP, paw_b_size);
+    float pbs = paw_b_size / 0.092;
+    float toeBL = min(min(
+        sdSegment(uv, pbLCenter+vec2(-0.045,-0.02)*pbs, pbLCenter+vec2(-0.045,-0.06)*pbs),
+        sdSegment(uv, pbLCenter+vec2( 0.000,-0.03)*pbs, pbLCenter+vec2( 0.000,-0.07)*pbs)),
+        sdSegment(uv, pbLCenter+vec2( 0.045,-0.02)*pbs, pbLCenter+vec2( 0.045,-0.06)*pbs));
+    float toeBR = min(min(
+        sdSegment(uv, pbRCenter+vec2(-0.045,-0.02)*pbs, pbRCenter+vec2(-0.045,-0.06)*pbs),
+        sdSegment(uv, pbRCenter+vec2( 0.000,-0.03)*pbs, pbRCenter+vec2( 0.000,-0.07)*pbs)),
+        sdSegment(uv, pbRCenter+vec2( 0.045,-0.02)*pbs, pbRCenter+vec2( 0.045,-0.06)*pbs));
 
     // ---- BELLY ----
     vec2 bellyP = uv - vec2(0.0, bY-0.04); bellyP.y *= 1.25;
@@ -270,7 +279,7 @@ void main() {
     vec2  bRel       = uv - ballCenter;
     float ballSdf    = sdCircle(bRel, ball_size);
     // Roll: CW when moving right, CCW when moving left (rolling without slip)
-    float rollAngle  = -ballXOrbit / max(ball_size, 0.02);
+    float rollAngle  = ballXOrbit / max(ball_size, 0.02);
     vec2  bRelN      = rot2(rollAngle) * (bRel / bs);
     float yarnA = (sdSegment(bRelN, vec2(-0.052,-0.016), vec2( 0.052, 0.016)) - 0.009) * bs;
     float yarnB = (sdSegment(bRelN, vec2(-0.038, 0.038), vec2( 0.038,-0.038)) - 0.009) * bs;
@@ -283,14 +292,28 @@ void main() {
     vec3 col = bg_color.rgb;
     vec3 fur = fur_color.rgb;
 
+    float outW = 0.013;
+    vec3 furDark = fur * 0.58;
+
     if (show_body) {
+        // Tail with outline
+        col = mix(col, furDark, fill(tail_sdf + outW, aa));
         col = mix(col, fur, fill(tail_sdf, aa));
-        col = mix(col, fur, fill(tailTip,  aa));
+        col = mix(col, furDark, fill(tailTip + outW, aa));
+        col = mix(col, fur, fill(tailTip, aa));
+        // Back paws behind body, with outline + toes
+        col = mix(col, furDark, fill(pbL + outW, aa));
+        col = mix(col, fur, fill(pbL, aa));
+        col = mix(col, fur*0.55, fill(toeBL-0.004,aa)*fill(pbL,aa));
+        col = mix(col, furDark, fill(pbR + outW, aa));
+        col = mix(col, fur, fill(pbR, aa));
+        col = mix(col, fur*0.55, fill(toeBR-0.004,aa)*fill(pbR,aa));
+        // Neck + body with outline
+        col = mix(col, furDark, fill(neck_sdf + outW, aa));
         col = mix(col, fur, fill(neck_sdf, aa));
+        col = mix(col, furDark, fill(body_sdf + outW, aa));
         col = mix(col, fur, fill(body_sdf, aa));
         col = mix(col, mix(fur,vec3(1.0),0.45), fill(belly,aa)*fill(body_sdf,aa));
-        col = mix(col, fur, fill(pbL, aa));
-        col = mix(col, fur, fill(pbR, aa));
     }
 
     // Head + ears + face (below ball and front paws)
@@ -321,9 +344,11 @@ void main() {
 
     // Front paws on top of ball
     if (show_body) {
+        col = mix(col, furDark, fill(pfL + outW, aa));
         col = mix(col, fur, fill(pfL, aa));
-        col = mix(col, fur, fill(pfR, aa));
         col = mix(col, fur*0.55, fill(toeL-0.004,aa)*fill(pfL,aa));
+        col = mix(col, furDark, fill(pfR + outW, aa));
+        col = mix(col, fur, fill(pfR, aa));
         col = mix(col, fur*0.55, fill(toeR-0.004,aa)*fill(pfR,aa));
     }
 
