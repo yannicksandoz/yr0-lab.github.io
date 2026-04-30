@@ -107,63 +107,65 @@ void main() {
     uv.y -= bobManual + bobAuto;
     if (mirror) uv.x = -uv.x;
 
-    // ======================================================== HEAD + MUZZLE
-    vec2 headP = uv; headP.y *= 1.04; headP.x *= 0.94;
-    float head = sdCircle(headP, 0.40);
-    vec2 muzzleP = uv - vec2(0.0, -0.13); muzzleP.x /= 0.74; muzzleP.y /= 0.65;
-    float muzzle = sdCircle(muzzleP, 0.22);
+    // ======================================================== HEAD + MUZZLE (Cocker: domed skull, square muzzle)
+    vec2 headP = uv; headP.y *= 1.10; headP.x *= 0.97;
+    float head = sdCircle(headP, 0.41);
+    // Square, broad muzzle with rounded corners (sdBox - r)
+    vec2 muzzleP = uv - vec2(0.0, -0.165);
+    float muzzle = sdBox(muzzleP, vec2(0.118, 0.068)) - 0.052;
     float headShape = min(head, muzzle);
 
-    // ======================================================== EARS (floppy)
-    vec2 earPivL = vec2(-0.30, 0.22);
-    vec2 earPivR = vec2( 0.30, 0.22);
-    float earManual = (ear_t - 0.5) * 2.0 * 0.22;
-    float earAuto   = animate ? sin(t*1.4+0.3)*(ear_amp*0.22) : 0.0;
+    // ======================================================== EARS (Cocker: pivot at eye level, very long pendulous)
+    vec2 earPivL = vec2(-0.37, 0.04);
+    vec2 earPivR = vec2( 0.37, 0.04);
+    float earManual = (ear_t - 0.5) * 2.0 * 0.18;
+    float earAuto   = animate ? sin(t*1.1+0.3)*(ear_amp*0.18) : 0.0;
     float earAngle  = earManual + earAuto;
     vec2 uvEL = earPivL + rot2(-earAngle) * (uv - earPivL);
     vec2 uvER = earPivR + rot2( earAngle) * (uv - earPivR);
-    // Ear: elongated ellipse hanging from pivot
-    vec2 earLCenter = vec2(-0.40, 0.00);
-    vec2 earRCenter = vec2( 0.40, 0.00);
-    vec2 earLP = uvEL - earLCenter; earLP.x /= 0.58; earLP.y /= 0.95;
-    float earL = sdCircle(earLP, 0.25) - 0.018;
-    vec2 earRP = uvER - earRCenter; earRP.x /= 0.58; earRP.y /= 0.95;
-    float earR = sdCircle(earRP, 0.25) - 0.018;
-    // Inner ear
-    vec2 iEarLP = uvEL - earLCenter; iEarLP.x /= 0.38; iEarLP.y /= 0.72;
-    float innerEarL = sdCircle(iEarLP, 0.16) - 0.010;
-    vec2 iEarRP = uvER - earRCenter; iEarRP.x /= 0.38; iEarRP.y /= 0.72;
-    float innerEarR = sdCircle(iEarRP, 0.16) - 0.010;
+    // Long teardrop ear: wide at top, tapers to rounded bottom
+    vec2 earLCenter = vec2(-0.43, -0.20);
+    vec2 earRCenter = vec2( 0.43, -0.20);
+    vec2 earLP = uvEL - earLCenter; earLP.x /= 0.54; earLP.y /= 1.22;
+    float earL = sdCircle(earLP, 0.28) - 0.022;
+    vec2 earRP = uvER - earRCenter; earRP.x /= 0.54; earRP.y /= 1.22;
+    float earR = sdCircle(earRP, 0.28) - 0.022;
+    // Inner ear (lighter silky patch)
+    vec2 iEarLP = uvEL - earLCenter; iEarLP.x /= 0.36; iEarLP.y /= 0.90;
+    float innerEarL = sdCircle(iEarLP, 0.19) - 0.012;
+    vec2 iEarRP = uvER - earRCenter; iEarRP.x /= 0.36; iEarRP.y /= 0.90;
+    float innerEarR = sdCircle(iEarRP, 0.19) - 0.012;
 
-    // ======================================================== EYES
-    vec2 eyeLPos = vec2(-0.14, 0.06);
-    vec2 eyeRPos = vec2( 0.14, 0.06);
-    float eR = 0.076;
+    // ======================================================== EYES (Cocker: large, round, soulful)
+    vec2 eyeLPos = vec2(-0.130, 0.055);
+    vec2 eyeRPos = vec2( 0.130, 0.055);
+    float eR = 0.084;
     float eyeL  = sdCircle(uv - eyeLPos, eR);
     float eyeR2 = sdCircle(uv - eyeRPos, eR);
     float breathe = animate ? 0.5+0.5*sin(t*0.5) : 0.5;
-    float pupRad  = eR * clamp(0.35 + pupil_dilation*0.55 + breathe*0.08, 0.20, 0.88);
+    float pupRad  = eR * clamp(0.36 + pupil_dilation*0.54 + breathe*0.08, 0.20, 0.88);
     float pupilL  = sdCircle(uv - eyeLPos, pupRad);
     float pupilR2 = sdCircle(uv - eyeRPos, pupRad);
     vec2  lidCL = eyeLPos + vec2(0.0, eR*2.3*blink);
     vec2  lidCR = eyeRPos + vec2(0.0, eR*2.3*blink);
     float lidL  = sdBox(uv - lidCL, vec2(eR*1.18, eR*1.12));
     float lidR2 = sdBox(uv - lidCR, vec2(eR*1.18, eR*1.12));
-    float shineL = sdCircle(uv - eyeLPos - vec2(0.020,0.024), 0.017);
-    float shineR = sdCircle(uv - eyeRPos - vec2(0.020,0.024), 0.017);
-    float browL  = sdCircle(uv - eyeLPos - vec2(0.0, 0.105), 0.018);
-    float browR  = sdCircle(uv - eyeRPos - vec2(0.0, 0.105), 0.018);
+    float shineL = sdCircle(uv - eyeLPos - vec2(0.022,0.026), 0.018);
+    float shineR = sdCircle(uv - eyeRPos - vec2(0.022,0.026), 0.018);
+    // Cocker brow ridges: slight arcs above each eye
+    float browL  = sdCircle(uv - eyeLPos - vec2(0.0, 0.110), 0.020);
+    float browR  = sdCircle(uv - eyeRPos - vec2(0.0, 0.110), 0.020);
 
-    // ======================================================== NOSE
-    vec2 noseP = uv - vec2(0.0, -0.072); noseP.x /= 0.72;
-    float nose = sdCircle(noseP, 0.056);
-    float noseShine = sdCircle(uv - vec2(-0.018,-0.052), 0.013);
+    // ======================================================== NOSE (Cocker: wide, prominent)
+    vec2 noseP = uv - vec2(0.0, -0.108); noseP.x /= 0.80;
+    float nose = sdCircle(noseP, 0.058);
+    float noseShine = sdCircle(uv - vec2(-0.020,-0.090), 0.013);
 
     // ======================================================== MOUTH + TONGUE
     float jawD = mouth_open * 0.06;
-    vec2 mMid = vec2(0.0, -0.160);
-    vec2 mCL  = mix(vec2(-0.080,-0.156), vec2(-0.095,-0.168+jawD), mouth_open);
-    vec2 mCR  = mix(vec2( 0.080,-0.156), vec2( 0.095,-0.168+jawD), mouth_open);
+    vec2 mMid = vec2(0.0, -0.188);
+    vec2 mCL  = mix(vec2(-0.076,-0.184), vec2(-0.092,-0.196+jawD), mouth_open);
+    vec2 mCR  = mix(vec2( 0.076,-0.184), vec2( 0.092,-0.196+jawD), mouth_open);
     float mouth = min(sdSegment(uv, mMid, mCL), sdSegment(uv, mMid, mCR));
     float mouthInteriorR = mouth_open * 0.058;
     vec2  mIntP = uv - mMid; mIntP.x /= 0.72;
