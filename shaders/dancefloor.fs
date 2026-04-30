@@ -9,7 +9,7 @@
     { "NAME": "horizon_y",       "TYPE": "float", "DEFAULT": 0.4,   "MIN": 0.0,  "MAX": 0.8  },
     { "NAME": "tile_gap",        "TYPE": "float", "DEFAULT": 0.05,  "MIN": 0.0,  "MAX": 0.3  },
     { "NAME": "camera_tilt",     "TYPE": "float", "DEFAULT": 1.0,   "MIN": 0.3,  "MAX": 3.0  },
-    { "NAME": "pattern_mode",    "TYPE": "long",  "DEFAULT": 0,     "VALUES": [0,1,2,3,4,5,6], "LABELS": ["static","checkerboard","ripple","random","row_sweep","col_sweep","diagonal"] },
+    { "NAME": "pattern_mode",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": 0.0,  "MAX": 6.0  },
     { "NAME": "pattern_speed",   "TYPE": "float", "DEFAULT": 1.0,   "MIN": 0.0,  "MAX": 5.0  },
     { "NAME": "pattern_density", "TYPE": "float", "DEFAULT": 0.5,   "MIN": 0.0,  "MAX": 1.0  },
     { "NAME": "pattern_mix",     "TYPE": "float", "DEFAULT": 1.0,   "MIN": 0.0,  "MAX": 1.0  },
@@ -62,6 +62,7 @@ void main() {
     float t  = animate ? TIME : 0.0;
     float gc = float(grid_cols);
     float gr = float(grid_rows);
+    int   pm = int(pattern_mode + 0.5);
 
     // ---- SKY (above horizon) ----
     if (sy >= horizon_y) {
@@ -104,29 +105,29 @@ void main() {
     float colFl = floor(tileU);
     float patternLit = 0.0;
 
-    if (pattern_mode == 1) {
+    if (pm == 1) {
         // Checkerboard pulsant
         float checker = mod(fcol + frow, 2.0) < 1.0 ? 1.0 : 0.0;
         float pulse   = step(1.0 - pattern_density, 0.5 + 0.5 * sin(t * pattern_speed * 3.14159));
         patternLit    = checker * pulse;
-    } else if (pattern_mode == 2) {
+    } else if (pm == 2) {
         // Ripple depuis le centre
         float dist = length(vec2(fcol - gc * 0.5, frow - gr * 0.5));
         float wave = 0.5 + 0.5 * sin(dist * 2.0 - t * pattern_speed * 5.0);
         patternLit = step(1.0 - pattern_density, wave);
-    } else if (pattern_mode == 3) {
+    } else if (pm == 3) {
         // Random scintillement
         float timeBin = floor(t * pattern_speed * 3.0);
         patternLit    = step(1.0 - pattern_density, hash21(vec2(fcol, frow) + timeBin));
-    } else if (pattern_mode == 4) {
+    } else if (pm == 4) {
         // Row sweep (vague horizontale, de proche à lointain)
         float sweep = mod(rowFl - t * pattern_speed * gr * 0.3, gr);
         patternLit  = step(sweep, gr * pattern_density);
-    } else if (pattern_mode == 5) {
+    } else if (pm == 5) {
         // Col sweep (vague verticale)
         float sweep = mod(colFl - t * pattern_speed * gc * 0.3, gc);
         patternLit  = step(sweep, gc * pattern_density);
-    } else if (pattern_mode == 6) {
+    } else if (pm == 6) {
         // Diagonal sweep
         float sweep = mod(colFl + rowFl - t * pattern_speed * (gc + gr) * 0.2, gc + gr);
         patternLit  = step(sweep, (gc + gr) * pattern_density);
