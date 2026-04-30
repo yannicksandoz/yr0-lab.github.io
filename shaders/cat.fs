@@ -1,5 +1,5 @@
 /*{
-  "DESCRIPTION": "Procedural cat — head and body with full manual + auto animation controls.",
+  "DESCRIPTION": "Procedural cat — head and body with full manual + auto animation controls. v1.6",
   "CREDIT": "yr0-lab",
   "ISFVSN": "2",
   "CATEGORIES": ["Generator"],

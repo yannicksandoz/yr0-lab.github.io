@@ -1,5 +1,5 @@
 /*{
-  "DESCRIPTION": "Procedural dog — head and body with animation controls.",
+  "DESCRIPTION": "Procedural dog (Cocker Spaniel) — head and body with animation controls. v1.4",
   "CREDIT": "yr0-lab",
   "ISFVSN": "2",
   "CATEGORIES": ["Generator"],
