@@ -1,5 +1,5 @@
 /*{
-  "DESCRIPTION": "Procedural dog (Cocker Spaniel) — head and body with animation controls. v1.5",
+  "DESCRIPTION": "Procedural dog (Cocker Spaniel) — head and body with animation controls. v2.0",
   "CREDIT": "yr0-lab",
   "ISFVSN": "2",
   "CATEGORIES": ["Generator"],
@@ -41,7 +41,7 @@
     { "NAME": "show_bone",     "TYPE": "bool",  "DEFAULT": false  },
     { "NAME": "bone_color",    "TYPE": "color", "DEFAULT": [0.96, 0.93, 0.85, 1.0] },
     { "NAME": "bone_x",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
-    { "NAME": "bone_y",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.60, "MAX": 0.60 },
+    { "NAME": "bone_y",        "TYPE": "float", "DEFAULT": 0.0,   "MIN": -0.60, "MAX": 1.60 },
     { "NAME": "bone_pan",      "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
     { "NAME": "bone_size",     "TYPE": "float", "DEFAULT": 0.06,  "MIN": 0.02,  "MAX": 0.18 },
     { "NAME": "bone_angle",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
@@ -128,8 +128,8 @@ void main() {
     // ======================================================== EARS (Cocker: low pivot, very long pendulous, fringed)
     vec2 earPivL = vec2(-0.37, -0.05);
     vec2 earPivR = vec2( 0.37, -0.05);
-    float earManual = (ear_t - 0.5) * 2.0 * 0.18;
-    float earAuto   = animate ? sin(t*1.1+0.3)*(ear_amp*0.18) : 0.0;
+    float earManual = (ear_t - 0.5) * 2.0 * 0.10;
+    float earAuto   = animate ? sin(t*1.1+0.3)*(ear_amp*0.10) : 0.0;
     float earAngle  = earManual + earAuto;
     vec2 uvEL = earPivL + rot2(-earAngle) * (uv - earPivL);
     vec2 uvER = earPivR + rot2( earAngle) * (uv - earPivR);
@@ -163,6 +163,16 @@ void main() {
     vec2 iEarRP = uvER - earRCenter; iEarRP.x /= 0.28; iEarRP.y /= 1.30;
     float innerEarR = sdCircle(iEarRP, 0.19) - 0.012;
 
+    // ---- Ear-skull fusion (unified silhouette) ----
+    float earsCombined  = min(earL, earR);
+    float headEarsUnion = smin(headShape, earsCombined, 0.045);
+
+    // ---- GAZE toward bone (bY = -0.632 - neck_gap, boneCenter.y = bY - 0.36 + bone_y) ----
+    vec2  bonePosForGaze = vec2(bone_x + bone_pan, -0.992 - neck_gap + bone_y);
+    vec2  toBone         = bonePosForGaze - vec2(0.0, 0.05);
+    float gazeDist       = max(length(toBone), 0.001);
+    vec2  gazeDir        = show_bone ? (toBone / gazeDist) * min(gazeDist * 0.12, 0.014) : vec2(0.0);
+
     // ======================================================== EYES (Cocker: large, round, soulful)
     vec2 eyeLPos = vec2(-0.155, 0.050);
     vec2 eyeRPos = vec2( 0.155, 0.050);
@@ -173,14 +183,24 @@ void main() {
     float eyeR2 = sdCircle(eyePR, eR);
     float breathe = animate ? 0.5+0.5*sin(t*0.5) : 0.5;
     float pupRad  = eR * clamp(0.32 + pupil_dilation*0.50 + breathe*0.06, 0.18, 0.84);
-    float pupilL  = sdCircle(eyePL, pupRad);
-    float pupilR2 = sdCircle(eyePR, pupRad);
+    float pupilL  = sdCircle(eyePL - gazeDir, pupRad);
+    float pupilR2 = sdCircle(eyePR - gazeDir, pupRad);
     vec2  lidCL = eyeLPos + vec2(0.0, eR*2.3*blink);
     vec2  lidCR = eyeRPos + vec2(0.0, eR*2.3*blink);
     float lidL  = sdBox(uv - lidCL, vec2(eR*1.18, eR*1.12));
     float lidR2 = sdBox(uv - lidCR, vec2(eR*1.18, eR*1.12));
-    float shineL = sdCircle(uv - eyeLPos - vec2(0.022,0.026), 0.018);
-    float shineR = sdCircle(uv - eyeRPos - vec2(0.022,0.026), 0.018);
+    // Iris radial gradient: bright caramel center, darker limbal ring
+    float irisDistL = clamp(length(eyePL) / eR, 0.0, 1.0);
+    float irisDistR = clamp(length(eyePR) / eR, 0.0, 1.0);
+    vec3  irisColL  = mix(eye_color.rgb * 1.5, eye_color.rgb * 0.70, irisDistL);
+    vec3  irisColR  = mix(eye_color.rgb * 1.5, eye_color.rgb * 0.70, irisDistR);
+    // Primary catchlight: teardrop oval; secondary small catchlight bottom-right; both track gaze
+    vec2  sh1PL = uv - eyeLPos - vec2(0.026, 0.028) - gazeDir; sh1PL.y /= 0.62;
+    float shineL  = sdCircle(sh1PL, 0.024);
+    float shine2L = sdCircle(uv - eyeLPos - vec2(0.032, -0.028) - gazeDir, 0.009);
+    vec2  sh1PR = uv - eyeRPos - vec2(0.026, 0.028) - gazeDir; sh1PR.y /= 0.62;
+    float shineR  = sdCircle(sh1PR, 0.024);
+    float shine2R = sdCircle(uv - eyeRPos - vec2(0.032, -0.028) - gazeDir, 0.009);
     // Cocker brow ridges: slight arcs above each eye
     float browL  = sdCircle(uv - eyeLPos - vec2(0.0, 0.110), 0.020);
     float browR  = sdCircle(uv - eyeRPos - vec2(0.0, 0.110), 0.020);
@@ -195,13 +215,15 @@ void main() {
     vec2 mMid = vec2(0.0, -0.262);
     vec2 mCL  = mix(vec2(-0.078,-0.258), vec2(-0.094,-0.270+jawD), mouth_open);
     vec2 mCR  = mix(vec2( 0.078,-0.258), vec2( 0.094,-0.270+jawD), mouth_open);
-    float mouth = min(sdSegment(uv, mMid, mCL), sdSegment(uv, mMid, mCR));
-    float mouthInteriorR = mouth_open * 0.058;
-    vec2  mIntP = uv - mMid; mIntP.x /= 0.72;
-    float mInterior = sdCircle(mIntP, mouthInteriorR);
-    float tongueR = mouth_open * 0.070;
-    vec2  tongC   = mMid - vec2(0.0, mouth_open * 0.042);
-    vec2  tongP   = uv - tongC; tongP.x /= 0.68;
+    // Corner segments fade out as mouth opens
+    float mouthCorners = min(sdSegment(uv, mMid, mCL), sdSegment(uv, mMid, mCR));
+    // Cavity ellipse grows downward from mMid
+    vec2  cavC  = mMid - vec2(0.0, mouth_open * 0.028);
+    vec2  cavP  = uv - cavC; cavP.x /= 0.86;
+    float mouthCavity = sdCircle(cavP, mouth_open * 0.062);
+    float tongueR = mouth_open * 0.048;
+    vec2  tongC   = cavC - vec2(0.0, mouth_open * 0.018);
+    vec2  tongP   = uv - tongC; tongP.x /= 0.70;
     float tongue  = sdCircle(tongP, tongueR);
 
     // ======================================================== BODY
@@ -312,32 +334,33 @@ void main() {
         col = mix(col, mix(fur,vec3(1.0),0.42), fill(belly,aa)*fill(body_sdf,aa));
     }
 
-    // Ears behind head
-    col = mix(col, outC, fill(earL - outW, aa));
-    col = mix(col, ear_color.rgb,        fill(earL, aa));
-    col = mix(col, ear_color.rgb * 0.78, fill(innerEarL, aa));
+    // Fused skull-ear silhouette: single unified outline, fur base everywhere
+    col = mix(col, outC, fill(headEarsUnion - outW, aa));
+    col = mix(col, fur,  fill(headEarsUnion, aa));
+    // Ear zones: ear_color only outside the skull contour
+    float inHead = fill(headShape, aa);
+    col = mix(col, ear_color.rgb,        fill(earL, aa) * (1.0 - inHead));
+    col = mix(col, ear_color.rgb * 0.78, fill(innerEarL, aa) * (1.0 - inHead));
     col = mix(col, outC, fill(hatchL - 0.003, aa)*fill(earL, aa));
-    col = mix(col, outC, fill(earR - outW, aa));
-    col = mix(col, ear_color.rgb,        fill(earR, aa));
-    col = mix(col, ear_color.rgb * 0.78, fill(innerEarR, aa));
+    col = mix(col, ear_color.rgb,        fill(earR, aa) * (1.0 - inHead));
+    col = mix(col, ear_color.rgb * 0.78, fill(innerEarR, aa) * (1.0 - inHead));
     col = mix(col, outC, fill(hatchR - 0.003, aa)*fill(earR, aa));
-
-    // Head + muzzle
-    col = mix(col, outC, fill(headShape - outW, aa));
-    col = mix(col, fur,  fill(headShape, aa));
+    // Muzzle lighter highlight
     col = mix(col, mix(fur,vec3(1.0),0.32), fill(muzzle,aa)*fill(headShape,aa));
     // Nasal bridge shadow
     col = mix(col, outC*0.55+fur*0.45, fill(nasalRidge-0.002,aa)*fill(headShape,aa));
     // Discreet forelock wisp
     col = mix(col, ear_color.rgb, fill(topknot, aa));
 
-    // Eyes
-    col = mix(col, eye_color.rgb, fill(eyeL,  aa));
-    col = mix(col, eye_color.rgb, fill(eyeR2, aa));
+    // Eyes: iris gradient, gaze-tracked pupils, teardrop + secondary catchlight
+    col = mix(col, irisColL, fill(eyeL,  aa));
+    col = mix(col, irisColR, fill(eyeR2, aa));
     col = mix(col, vec3(0.05,0.03,0.01), fill(pupilL, aa)*fill(eyeL, aa)*blink);
     col = mix(col, vec3(0.05,0.03,0.01), fill(pupilR2,aa)*fill(eyeR2,aa)*blink);
-    col = mix(col, vec3(1.0), fill(shineL,aa)*fill(eyeL, aa)*blink);
-    col = mix(col, vec3(1.0), fill(shineR,aa)*fill(eyeR2,aa)*blink);
+    col = mix(col, vec3(1.00), fill(shineL,  aa)*fill(eyeL, aa)*blink);
+    col = mix(col, vec3(0.78), fill(shine2L, aa)*fill(eyeL, aa)*blink);
+    col = mix(col, vec3(1.00), fill(shineR,  aa)*fill(eyeR2,aa)*blink);
+    col = mix(col, vec3(0.78), fill(shine2R, aa)*fill(eyeR2,aa)*blink);
     col = mix(col, fur, fill(lidL, aa)*fill(eyeL, aa));
     col = mix(col, fur, fill(lidR2,aa)*fill(eyeR2,aa));
     col = mix(col, fur*0.52, fill(browL-0.001,aa)*fill(headShape,aa));
@@ -347,10 +370,10 @@ void main() {
     col = mix(col, vec3(0.08,0.04,0.03), fill(nose, aa));
     col = mix(col, vec3(0.52,0.36,0.32), fill(noseShine,aa)*fill(nose,aa));
 
-    // Mouth + tongue
-    col = mix(col, vec3(0.08,0.03,0.05), fill(mInterior,aa)*fill(headShape,aa));
-    col = mix(col, vec3(0.91,0.44,0.50), fill(tongue,   aa)*fill(headShape,aa));
-    col = mix(col, vec3(0.20,0.07,0.09), fill(mouth-0.0052,aa)*fill(headShape,aa));
+    // Mouth + tongue: cavity opens downward, corners fade on open
+    col = mix(col, vec3(0.08,0.03,0.05), fill(mouthCavity, aa)*fill(headShape,aa));
+    col = mix(col, vec3(0.91,0.44,0.50), fill(tongue,      aa)*fill(headShape,aa));
+    col = mix(col, vec3(0.20,0.07,0.09), fill(mouthCorners-0.0052,aa)*fill(headShape,aa)*(1.0-mouth_open*0.85));
 
     // Bone over head, under front paws
     if (show_bone) {
