@@ -45,6 +45,7 @@
     { "NAME": "bone_pan",      "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
     { "NAME": "bone_size",     "TYPE": "float", "DEFAULT": 0.06,  "MIN": 0.02,  "MAX": 0.18 },
     { "NAME": "bone_angle",    "TYPE": "float", "DEFAULT": 0.0,   "MIN": -1.0,  "MAX": 1.0  },
+    { "NAME": "ear_color",     "TYPE": "color", "DEFAULT": [0.66, 0.44, 0.18, 1.0] },
     { "NAME": "mirror",        "TYPE": "bool",  "DEFAULT": false  }
   ]
 }*/
@@ -85,6 +86,8 @@ float sdBezier(vec2 pos, vec2 A, vec2 B, vec2 C) {
 
 mat2 rot2(float a){ float c=cos(a),s=sin(a); return mat2(c,s,-s,c); }
 float fill(float d, float aa){ return smoothstep(aa,-aa,d); }
+float smin(float a, float b, float k){ float h=clamp(0.5+0.5*(b-a)/k,0.0,1.0); return mix(b,a,h)-k*h*(1.0-h); }
+float sdPad(vec2 p, vec2 c, float r){ vec2 q=p-c; q.y/=0.62; return sdCircle(q,r); }
 
 void main() {
     vec2 uv = isf_FragNormCoord.xy * 2.0 - 1.0;
@@ -108,37 +111,43 @@ void main() {
     if (mirror) uv.x = -uv.x;
 
     // ======================================================== HEAD + MUZZLE (Cocker: domed skull, square muzzle)
-    vec2 headP = uv; headP.y *= 1.10; headP.x *= 0.97;
-    float head = sdCircle(headP, 0.41);
+    vec2 headP = uv; headP.y *= 1.07; headP.x *= 0.96;
+    float head = sdCircle(headP, 0.40);
     // Square, broad muzzle with rounded corners (sdBox - r)
     vec2 muzzleP = uv - vec2(0.0, -0.165);
     float muzzle = sdBox(muzzleP, vec2(0.118, 0.068)) - 0.052;
-    float headShape = min(head, muzzle);
+    float headShape = smin(head, muzzle, 0.04);
+    // Nasal bridge ridge (thin shadow across top of muzzle)
+    float nasalRidge = sdBox(uv - vec2(0.0, -0.112), vec2(0.058, 0.007));
 
-    // ======================================================== EARS (Cocker: pivot at eye level, very long pendulous)
-    vec2 earPivL = vec2(-0.37, 0.04);
-    vec2 earPivR = vec2( 0.37, 0.04);
+    // ======================================================== EARS (Cocker: low pivot, very long pendulous, fringed)
+    vec2 earPivL = vec2(-0.37, -0.05);
+    vec2 earPivR = vec2( 0.37, -0.05);
     float earManual = (ear_t - 0.5) * 2.0 * 0.18;
     float earAuto   = animate ? sin(t*1.1+0.3)*(ear_amp*0.18) : 0.0;
     float earAngle  = earManual + earAuto;
     vec2 uvEL = earPivL + rot2(-earAngle) * (uv - earPivL);
     vec2 uvER = earPivR + rot2( earAngle) * (uv - earPivR);
-    // Long teardrop ear: wide at top, tapers to rounded bottom
-    vec2 earLCenter = vec2(-0.43, -0.20);
-    vec2 earRCenter = vec2( 0.43, -0.20);
-    vec2 earLP = uvEL - earLCenter; earLP.x /= 0.54; earLP.y /= 1.22;
-    float earL = sdCircle(earLP, 0.28) - 0.022;
-    vec2 earRP = uvER - earRCenter; earRP.x /= 0.54; earRP.y /= 1.22;
-    float earR = sdCircle(earRP, 0.28) - 0.022;
-    // Inner ear (lighter silky patch)
-    vec2 iEarLP = uvEL - earLCenter; iEarLP.x /= 0.36; iEarLP.y /= 0.90;
+    // Long teardrop: center lowered so ear hangs well below jaw
+    vec2 earLCenter = vec2(-0.43, -0.45);
+    vec2 earRCenter = vec2( 0.43, -0.45);
+    vec2 earLP = uvEL - earLCenter; earLP.x /= 0.54; earLP.y /= 1.60;
+    float angL = atan(earLP.y, earLP.x);
+    float fringeL = (angL < 0.0) ? 0.006 * sin(angL * 12.0) : 0.0;
+    float earL = sdCircle(earLP, 0.28 + fringeL) - 0.022;
+    vec2 earRP = uvER - earRCenter; earRP.x /= 0.54; earRP.y /= 1.60;
+    float angR = atan(earRP.y, earRP.x);
+    float fringeR = (angR < 0.0) ? 0.006 * sin(angR * 12.0) : 0.0;
+    float earR = sdCircle(earRP, 0.28 + fringeR) - 0.022;
+    // Inner ear (silky lighter patch, scales with ear)
+    vec2 iEarLP = uvEL - earLCenter; iEarLP.x /= 0.36; iEarLP.y /= 1.20;
     float innerEarL = sdCircle(iEarLP, 0.19) - 0.012;
-    vec2 iEarRP = uvER - earRCenter; iEarRP.x /= 0.36; iEarRP.y /= 0.90;
+    vec2 iEarRP = uvER - earRCenter; iEarRP.x /= 0.36; iEarRP.y /= 1.20;
     float innerEarR = sdCircle(iEarRP, 0.19) - 0.012;
 
     // ======================================================== EYES (Cocker: large, round, soulful)
-    vec2 eyeLPos = vec2(-0.130, 0.055);
-    vec2 eyeRPos = vec2( 0.130, 0.055);
+    vec2 eyeLPos = vec2(-0.155, 0.050);
+    vec2 eyeRPos = vec2( 0.155, 0.050);
     float eR = 0.084;
     float eyeL  = sdCircle(uv - eyeLPos, eR);
     float eyeR2 = sdCircle(uv - eyeRPos, eR);
@@ -187,12 +196,12 @@ void main() {
     float tSwayH = tail_amp * 0.55 * cos(tailAngle);
     float tSwayV = tail_amp * 0.15 * sin(tailAngle);
     float tL     = tail_length;
-    vec2  tRoot   = vec2(0.24, bY + 0.06);
-    vec2  tailPiv = vec2(0.24, bY + 0.06 + tSwayV);
+    vec2  tRoot   = vec2(0.22, bY + 0.14);
+    vec2  tailPiv = vec2(0.22, bY + 0.14 + tSwayV);
     vec2  uvT     = tailPiv + rot2(-tSwayH) * (uv - tailPiv);
     vec2 tA = tRoot;
-    vec2 tB = tRoot + vec2(0.22,  0.20) * tL;
-    vec2 tC = tRoot + vec2(0.06,  0.36) * tL;
+    vec2 tB = tRoot + vec2(0.12,  0.28) * tL;
+    vec2 tC = tRoot + vec2(0.00,  0.44) * tL;
     float tailW   = 0.036 + 0.012 * tL;
     float tail_sdf = sdBezier(uvT, tA, tB, tC) - tailW;
     float tailTip  = sdCircle(uvT - (2.0*tC - tB), tailW * 1.25);
@@ -206,15 +215,16 @@ void main() {
     float pfL = sdCircle(pfLP, paw_f_size);
     vec2 pfRP = uv - pfRCenter; pfRP.y *= 0.72; pfRP.x *= 0.82;
     float pfR = sdCircle(pfRP, paw_f_size);
-    float ps = paw_f_size / 0.098;
+    float ps  = paw_f_size / 0.098;
+    float pr  = 0.022 * ps;
     float toeL = min(min(
-        sdSegment(uv, pfLCenter+vec2(-0.055,-0.02)*ps, pfLCenter+vec2(-0.055,-0.07)*ps),
-        sdSegment(uv, pfLCenter+vec2( 0.000,-0.03)*ps, pfLCenter+vec2( 0.000,-0.08)*ps)),
-        sdSegment(uv, pfLCenter+vec2( 0.055,-0.02)*ps, pfLCenter+vec2( 0.055,-0.07)*ps));
+        sdPad(uv, pfLCenter+vec2(-0.038,-0.046)*ps, pr),
+        sdPad(uv, pfLCenter+vec2( 0.000,-0.056)*ps, pr)),
+        sdPad(uv, pfLCenter+vec2( 0.038,-0.046)*ps, pr));
     float toeR = min(min(
-        sdSegment(uv, pfRCenter+vec2(-0.055,-0.02)*ps, pfRCenter+vec2(-0.055,-0.07)*ps),
-        sdSegment(uv, pfRCenter+vec2( 0.000,-0.03)*ps, pfRCenter+vec2( 0.000,-0.08)*ps)),
-        sdSegment(uv, pfRCenter+vec2( 0.055,-0.02)*ps, pfRCenter+vec2( 0.055,-0.07)*ps));
+        sdPad(uv, pfRCenter+vec2(-0.038,-0.046)*ps, pr),
+        sdPad(uv, pfRCenter+vec2( 0.000,-0.056)*ps, pr)),
+        sdPad(uv, pfRCenter+vec2( 0.038,-0.046)*ps, pr));
 
     // ---- BACK PAWS ----
     float pbAngle   = paw_b_t * 6.2832 + (animate ? t * 2.5 : 0.0);
@@ -226,14 +236,15 @@ void main() {
     vec2 pbRP = uv - pbRCenter; pbRP.y *= 0.65;
     float pbR = sdCircle(pbRP, paw_b_size);
     float pbs = paw_b_size / 0.092;
+    float pbr = 0.020 * pbs;
     float toeBL = min(min(
-        sdSegment(uv, pbLCenter+vec2(-0.045,-0.02)*pbs, pbLCenter+vec2(-0.045,-0.06)*pbs),
-        sdSegment(uv, pbLCenter+vec2( 0.000,-0.03)*pbs, pbLCenter+vec2( 0.000,-0.07)*pbs)),
-        sdSegment(uv, pbLCenter+vec2( 0.045,-0.02)*pbs, pbLCenter+vec2( 0.045,-0.06)*pbs));
+        sdPad(uv, pbLCenter+vec2(-0.032,-0.038)*pbs, pbr),
+        sdPad(uv, pbLCenter+vec2( 0.000,-0.046)*pbs, pbr)),
+        sdPad(uv, pbLCenter+vec2( 0.032,-0.038)*pbs, pbr));
     float toeBR = min(min(
-        sdSegment(uv, pbRCenter+vec2(-0.045,-0.02)*pbs, pbRCenter+vec2(-0.045,-0.06)*pbs),
-        sdSegment(uv, pbRCenter+vec2( 0.000,-0.03)*pbs, pbRCenter+vec2( 0.000,-0.07)*pbs)),
-        sdSegment(uv, pbRCenter+vec2( 0.045,-0.02)*pbs, pbRCenter+vec2( 0.045,-0.06)*pbs));
+        sdPad(uv, pbRCenter+vec2(-0.032,-0.038)*pbs, pbr),
+        sdPad(uv, pbRCenter+vec2( 0.000,-0.046)*pbs, pbr)),
+        sdPad(uv, pbRCenter+vec2( 0.032,-0.038)*pbs, pbr));
 
     // ---- BELLY ----
     vec2 bellyP = uv - vec2(0.0, bY-0.04); bellyP.y *= 1.25;
@@ -267,10 +278,10 @@ void main() {
         col = mix(col, fur,  fill(tailTip, aa));
         col = mix(col, outC, fill(pbL - outW, aa));
         col = mix(col, fur,  fill(pbL, aa));
-        col = mix(col, fur*0.55, fill(toeBL-0.004,aa)*fill(pbL,aa));
+        col = mix(col, mix(fur,outC,0.38), fill(toeBL,aa)*fill(pbL,aa));
         col = mix(col, outC, fill(pbR - outW, aa));
         col = mix(col, fur,  fill(pbR, aa));
-        col = mix(col, fur*0.55, fill(toeBR-0.004,aa)*fill(pbR,aa));
+        col = mix(col, mix(fur,outC,0.38), fill(toeBR,aa)*fill(pbR,aa));
         col = mix(col, outC, fill(neck_sdf - outW, aa));
         col = mix(col, fur,  fill(neck_sdf, aa));
         col = mix(col, outC, fill(body_sdf - outW, aa));
@@ -280,16 +291,18 @@ void main() {
 
     // Ears behind head
     col = mix(col, outC, fill(earL - outW, aa));
-    col = mix(col, fur,  fill(earL, aa));
-    col = mix(col, fur*0.72, fill(innerEarL, aa));
+    col = mix(col, ear_color.rgb,        fill(earL, aa));
+    col = mix(col, ear_color.rgb * 0.78, fill(innerEarL, aa));
     col = mix(col, outC, fill(earR - outW, aa));
-    col = mix(col, fur,  fill(earR, aa));
-    col = mix(col, fur*0.72, fill(innerEarR, aa));
+    col = mix(col, ear_color.rgb,        fill(earR, aa));
+    col = mix(col, ear_color.rgb * 0.78, fill(innerEarR, aa));
 
     // Head + muzzle
     col = mix(col, outC, fill(headShape - outW, aa));
     col = mix(col, fur,  fill(headShape, aa));
     col = mix(col, mix(fur,vec3(1.0),0.32), fill(muzzle,aa)*fill(headShape,aa));
+    // Nasal bridge shadow
+    col = mix(col, outC*0.55+fur*0.45, fill(nasalRidge-0.002,aa)*fill(headShape,aa));
 
     // Eyes
     col = mix(col, eye_color.rgb, fill(eyeL,  aa));
@@ -323,10 +336,10 @@ void main() {
     if (show_body) {
         col = mix(col, outC, fill(pfL - outW, aa));
         col = mix(col, fur,  fill(pfL, aa));
-        col = mix(col, fur*0.55, fill(toeL-0.004,aa)*fill(pfL,aa));
+        col = mix(col, mix(fur,outC,0.38), fill(toeL,aa)*fill(pfL,aa));
         col = mix(col, outC, fill(pfR - outW, aa));
         col = mix(col, fur,  fill(pfR, aa));
-        col = mix(col, fur*0.55, fill(toeR-0.004,aa)*fill(pfR,aa));
+        col = mix(col, mix(fur,outC,0.38), fill(toeR,aa)*fill(pfR,aa));
     }
 
     gl_FragColor = vec4(col, 1.0);
