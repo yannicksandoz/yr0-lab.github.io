@@ -312,30 +312,32 @@ void main() {
 
     // ======================================================== COMPOSITING
     vec3 col = bg_color.rgb;
+    float alpha = bg_color.a;
     vec3 fur = fur_color.rgb;
     float outW = outline_width;
     vec3  outC = outline_color.rgb;
+    float fM;
 
     if (show_body) {
-        col = mix(col, outC, fill(tail_sdf - outW, aa));
+        fM = fill(tail_sdf - outW, aa);  col = mix(col, outC, fM);  alpha = max(alpha, fM);
         col = mix(col, fur,  fill(tail_sdf, aa));
-        col = mix(col, outC, fill(tailTip - outW, aa));
+        fM = fill(tailTip - outW, aa);   col = mix(col, outC, fM);  alpha = max(alpha, fM);
         col = mix(col, fur,  fill(tailTip, aa));
-        col = mix(col, outC, fill(pbL - outW, aa));
+        fM = fill(pbL - outW, aa);       col = mix(col, outC, fM);  alpha = max(alpha, fM);
         col = mix(col, fur,  fill(pbL, aa));
         col = mix(col, mix(fur,outC,0.38), fill(toeBL,aa)*fill(pbL,aa));
-        col = mix(col, outC, fill(pbR - outW, aa));
+        fM = fill(pbR - outW, aa);       col = mix(col, outC, fM);  alpha = max(alpha, fM);
         col = mix(col, fur,  fill(pbR, aa));
         col = mix(col, mix(fur,outC,0.38), fill(toeBR,aa)*fill(pbR,aa));
-        col = mix(col, outC, fill(neck_sdf - outW, aa));
+        fM = fill(neck_sdf - outW, aa);  col = mix(col, outC, fM);  alpha = max(alpha, fM);
         col = mix(col, fur,  fill(neck_sdf, aa));
-        col = mix(col, outC, fill(body_sdf - outW, aa));
+        fM = fill(body_sdf - outW, aa);  col = mix(col, outC, fM);  alpha = max(alpha, fM);
         col = mix(col, fur,  fill(body_sdf, aa));
         col = mix(col, mix(fur,vec3(1.0),0.42), fill(belly,aa)*fill(body_sdf,aa));
     }
 
     // Fused skull-ear silhouette: single unified outline, fur base everywhere
-    col = mix(col, outC, fill(headEarsUnion - outW, aa));
+    fM = fill(headEarsUnion - outW, aa);  col = mix(col, outC, fM);  alpha = max(alpha, fM);
     col = mix(col, fur,  fill(headEarsUnion, aa));
     // Ear zones: ear_color only outside the skull contour
     float inHead = fill(headShape, aa);
@@ -377,20 +379,20 @@ void main() {
 
     // Bone over head, under front paws
     if (show_bone) {
-        col = mix(col, outC, fill(bone_sdf - outW, aa));
+        fM = fill(bone_sdf - outW, aa);  col = mix(col, outC, fM);  alpha = max(alpha, fM);
         col = mix(col, bone_color.rgb, fill(bone_sdf, aa));
         col = mix(col, vec3(1.0), fill(sdBox(boneRel, vec2(boneHL*0.65, shaftH*0.28))-0.004, aa)*fill(bone_sdf,aa));
     }
 
     // Front paws on top
     if (show_body) {
-        col = mix(col, outC, fill(pfL - outW, aa));
+        fM = fill(pfL - outW, aa);  col = mix(col, outC, fM);  alpha = max(alpha, fM);
         col = mix(col, fur,  fill(pfL, aa));
         col = mix(col, mix(fur,outC,0.38), fill(toeL,aa)*fill(pfL,aa));
-        col = mix(col, outC, fill(pfR - outW, aa));
+        fM = fill(pfR - outW, aa);  col = mix(col, outC, fM);  alpha = max(alpha, fM);
         col = mix(col, fur,  fill(pfR, aa));
         col = mix(col, mix(fur,outC,0.38), fill(toeR,aa)*fill(pfR,aa));
     }
 
-    gl_FragColor = vec4(col, 1.0);
+    gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0));
 }

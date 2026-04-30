@@ -300,34 +300,35 @@ void main() {
     // ======================================================== COMPOSITING
     // Draw order: body-bg → head+face → ball (over head) → front paws (over ball)
     vec3 col = bg_color.rgb;
+    float alpha = bg_color.a;
     vec3 fur = fur_color.rgb;
-
     float outW = outline_width;
     vec3 outlineCol = outline_color.rgb;
+    float fM;
 
     if (show_body) {
         // Tail with outline
-        col = mix(col, outlineCol, fill(tail_sdf - outW, aa));
+        fM = fill(tail_sdf - outW, aa);  col = mix(col, outlineCol, fM);  alpha = max(alpha, fM);
         col = mix(col, fur, fill(tail_sdf, aa));
-        col = mix(col, outlineCol, fill(tailTip - outW, aa));
+        fM = fill(tailTip - outW, aa);   col = mix(col, outlineCol, fM);  alpha = max(alpha, fM);
         col = mix(col, fur, fill(tailTip, aa));
         // Back paws behind body, with outline + toes
-        col = mix(col, outlineCol, fill(pbL - outW, aa));
+        fM = fill(pbL - outW, aa);       col = mix(col, outlineCol, fM);  alpha = max(alpha, fM);
         col = mix(col, fur, fill(pbL, aa));
         col = mix(col, fur*0.55, fill(toeBL-0.004,aa)*fill(pbL,aa));
-        col = mix(col, outlineCol, fill(pbR - outW, aa));
+        fM = fill(pbR - outW, aa);       col = mix(col, outlineCol, fM);  alpha = max(alpha, fM);
         col = mix(col, fur, fill(pbR, aa));
         col = mix(col, fur*0.55, fill(toeBR-0.004,aa)*fill(pbR,aa));
         // Neck + body with outline
-        col = mix(col, outlineCol, fill(neck_sdf - outW, aa));
+        fM = fill(neck_sdf - outW, aa);  col = mix(col, outlineCol, fM);  alpha = max(alpha, fM);
         col = mix(col, fur, fill(neck_sdf, aa));
-        col = mix(col, outlineCol, fill(body_sdf - outW, aa));
+        fM = fill(body_sdf - outW, aa);  col = mix(col, outlineCol, fM);  alpha = max(alpha, fM);
         col = mix(col, fur, fill(body_sdf, aa));
         col = mix(col, mix(fur,vec3(1.0),0.45), fill(belly,aa)*fill(body_sdf,aa));
     }
 
     // Head + ears + face (below ball and front paws)
-    col = mix(col, outlineCol, fill(min(head,ears) - outW, aa));
+    fM = fill(min(head,ears) - outW, aa);  col = mix(col, outlineCol, fM);  alpha = max(alpha, fM);
     col = mix(col, fur, fill(min(head,ears), aa));
     col = mix(col, vec3(0.96,0.60,0.68), fill(innerEarL, aa));
     col = mix(col, vec3(0.96,0.60,0.68), fill(innerEarR, aa));
@@ -344,24 +345,24 @@ void main() {
     col = mix(col, vec3(0.11,0.03,0.05), fill(mInterior,aa)*fill(head,aa));
     col = mix(col, vec3(0.91,0.44,0.50), fill(tongue,   aa)*fill(head,aa));
     col = mix(col, vec3(0.28,0.10,0.14), fill(mouth-0.0052,aa)*fill(head,aa));
-    col = mix(col, vec3(0.95,0.95,0.98), fill(whiskers-0.0028,aa));
+    fM = fill(whiskers-0.0028,aa);  col = mix(col, vec3(0.95,0.95,0.98), fM);  alpha = max(alpha, fM);
 
     // Ball over head, under front paws
     if (show_ball) {
-        col = mix(col, ball_color.rgb, fill(ballSdf, aa));
+        fM = fill(ballSdf, aa);  col = mix(col, ball_color.rgb, fM);  alpha = max(alpha, fM);
         col = mix(col, ball_color.rgb*0.60, fill(yarn,aa)*fill(ballSdf,aa));
         col = mix(col, vec3(1.0), fill(ballShine,aa)*fill(ballSdf,aa));
     }
 
     // Front paws on top of ball
     if (show_body) {
-        col = mix(col, outlineCol, fill(pfL - outW, aa));
+        fM = fill(pfL - outW, aa);  col = mix(col, outlineCol, fM);  alpha = max(alpha, fM);
         col = mix(col, fur, fill(pfL, aa));
         col = mix(col, fur*0.55, fill(toeL-0.004,aa)*fill(pfL,aa));
-        col = mix(col, outlineCol, fill(pfR - outW, aa));
+        fM = fill(pfR - outW, aa);  col = mix(col, outlineCol, fM);  alpha = max(alpha, fM);
         col = mix(col, fur, fill(pfR, aa));
         col = mix(col, fur*0.55, fill(toeR-0.004,aa)*fill(pfR,aa));
     }
 
-    gl_FragColor = vec4(col, 1.0);
+    gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0));
 }

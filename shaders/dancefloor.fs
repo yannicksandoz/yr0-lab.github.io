@@ -66,7 +66,7 @@ void main() {
 
     // ---- SKY (above horizon) ----
     if (sy >= horizon_y) {
-        gl_FragColor = vec4(sky_color.rgb * brightness, 1.0);
+        gl_FragColor = vec4(sky_color.rgb * brightness, sky_color.a);
         return;
     }
 
